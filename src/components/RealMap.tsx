@@ -120,8 +120,8 @@ const fetchIPGeolocation = async (): Promise<{ lat: number; lng: number } | null
         return { lat: data.latitude, lng: data.longitude };
       }
     }
-  } catch (err) {
-    console.warn('freeipapi.com failed, trying fallback...', err);
+  } catch (err: any) {
+    if (err?.name !== 'AbortError') console.warn('freeipapi.com failed, trying fallback...', err);
   }
 
   // 2. Try ipapi.co/json
@@ -133,8 +133,8 @@ const fetchIPGeolocation = async (): Promise<{ lat: number; lng: number } | null
         return { lat: data.latitude, lng: data.longitude };
       }
     }
-  } catch (err) {
-    console.warn('ipapi.co failed, trying next fallback...', err);
+  } catch (err: any) {
+    if (err?.name !== 'AbortError') console.warn('ipapi.co failed, trying next fallback...', err);
   }
 
   // 3. Try ipinfo.io/json
@@ -151,8 +151,8 @@ const fetchIPGeolocation = async (): Promise<{ lat: number; lng: number } | null
         }
       }
     }
-  } catch (err) {
-    console.warn('ipinfo.io fallback failed:', err);
+  } catch (err: any) {
+    if (err?.name !== 'AbortError') console.warn('ipinfo.io fallback failed:', err);
   }
   return null;
 };
@@ -188,8 +188,8 @@ function LocateMeButton({ onLocate, onError }: { onLocate: (coords: { lat: numbe
           setIsLocating(false);
           return;
         }
-      } catch (err) {
-        console.warn('IP Geolocation failed in map fallback:', err);
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') console.warn('IP Geolocation failed in map fallback:', err);
       }
 
       // 2. Only if IP fails, fall back to preferred city from the region selector

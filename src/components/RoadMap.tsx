@@ -89,7 +89,7 @@ export default function RoadMap({ onSelectRoad, selectedRoadId }: RoadMapProps) 
       const query = `[out:json][timeout:15];(way["highway"~"${queryType}"](${south},${west},${north},${east}););out geom;`;
       const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
       
-      const res = await fetchWithTimeout(url, {}, 3000);
+      const res = await fetchWithTimeout(url, {}, 8000);
       if (!res.ok) throw new Error('Overpass query failed');
       const data = await res.json();
       
@@ -137,8 +137,11 @@ export default function RoadMap({ onSelectRoad, selectedRoadId }: RoadMapProps) 
 
         addMultipleRoads(newRoads);
       }
-    } catch (err) {
-      console.error('Failed to load local roads:', err);
+    } catch (err: any) {
+      // Silently ignore AbortError (timeout on slow/offline networks) — non-critical
+      if (err?.name !== 'AbortError') {
+        console.warn('Failed to load local roads:', err);
+      }
     } finally {
       setIsLoadingRoads(false);
     }
@@ -182,7 +185,7 @@ export default function RoadMap({ onSelectRoad, selectedRoadId }: RoadMapProps) 
         headers: {
           'User-Agent': 'RoadWatch-App/1.0'
         }
-      }, 3000);
+      }, 8000);
       if (!res.ok) throw new Error('Nominatim query failed');
       const data = await res.json();
 
@@ -252,9 +255,13 @@ export default function RoadMap({ onSelectRoad, selectedRoadId }: RoadMapProps) 
       } else {
         setSearchError(`Could not find road coordinates for "${query}". Try refining your search (e.g. NH44, Madurai).`);
       }
-    } catch (err) {
-      console.error('Search error:', err);
-      setSearchError('Error contacting geolocation server. Please try again.');
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        setSearchError('Search timed out. Check your internet connection and try again.');
+      } else {
+        console.warn('Search error:', err);
+        setSearchError('Error contacting geolocation server. Please try again.');
+      }
     } finally {
       setIsSearching(false);
     }
