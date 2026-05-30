@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap, useMapEvents 
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Road, CITIES, INDIA_DISTRICTS } from '../data/mockData';
-import { RefreshCw, Compass, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Compass, AlertTriangle, ChevronDown } from 'lucide-react';
 
 // Fix default leaflet icons breaking in Next.js builds
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -18,7 +18,7 @@ L.Icon.Default.mergeOptions({
 // Custom glowing HTML divIcons matching smart-city dashboard
 const locationIcon = L.divIcon({
   className: 'custom-div-icon',
-  html: `<div class="h-6 w-6 rounded-full bg-blue-500/20 border-2 border-blue-500 flex items-center justify-center" style="box-shadow: 0 0 15px #3b82f6;"><div class="h-2 w-2 rounded-full bg-blue-500"></div></div>`,
+  html: `<div class="h-6 w-6 rounded-full bg-slate-500/20 border-2 border-slate-500 flex items-center justify-center" style="box-shadow: 0 0 15px #6b7280;"><div class="h-2 w-2 rounded-full bg-slate-500"></div></div>`,
   iconSize: [24, 24],
   iconAnchor: [12, 12]
 });
@@ -93,10 +93,27 @@ function SelectedRoadController({ selectedRoad }: { selectedRoad: Road | null })
   return null;
 }
 
+// Robust fetch with abort timeout to prevent hanging on local/offline networks
+const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 2500): Promise<Response> => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+};
+
 const fetchIPGeolocation = async (): Promise<{ lat: number; lng: number } | null> => {
   // 1. Try freeipapi.com (Fast, free, reliable HTTPS)
   try {
-    const res = await fetch('https://freeipapi.com/api/json/');
+    const res = await fetchWithTimeout('https://freeipapi.com/api/json/', {}, 2000);
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
@@ -109,7 +126,7 @@ const fetchIPGeolocation = async (): Promise<{ lat: number; lng: number } | null
 
   // 2. Try ipapi.co/json
   try {
-    const res = await fetch('https://ipapi.co/json/');
+    const res = await fetchWithTimeout('https://ipapi.co/json/', {}, 2000);
     if (res.ok) {
       const data = await res.json();
       if (data && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
@@ -122,7 +139,7 @@ const fetchIPGeolocation = async (): Promise<{ lat: number; lng: number } | null
 
   // 3. Try ipinfo.io/json
   try {
-    const res = await fetch('https://ipinfo.io/json');
+    const res = await fetchWithTimeout('https://ipinfo.io/json', {}, 2000);
     if (res.ok) {
       const data = await res.json();
       if (data && data.loc) {
@@ -157,12 +174,25 @@ function LocateMeButton({ onLocate, onError }: { onLocate: (coords: { lat: numbe
     setIsLocating(true);
     onErrorRef.current('');
 
-    // Check if we're on HTTP (localhost) — browser always blocks GPS on non-HTTPS
+    // Check if we're secure (HTTPS or localhost)
     const isSecureContext = typeof window !== 'undefined' && window.isSecureContext;
 
-    // Helper: resolve via preferred city → IP chain
+    // Helper: resolve via IP first, then stored preferred city
     const resolveFromFallback = async () => {
-      // 1. Use preferred city the user selected in the region dropdown
+      // 1. Try IP Geolocation first to get actual physical coordinates
+      try {
+        const ipCoords = await fetchIPGeolocation();
+        if (ipCoords) {
+          map.setView([ipCoords.lat, ipCoords.lng], 15, { animate: true });
+          onLocateRef.current(ipCoords);
+          setIsLocating(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('IP Geolocation failed in map fallback:', err);
+      }
+
+      // 2. Only if IP fails, fall back to preferred city from the region selector
       const preferred = typeof window !== 'undefined' ? localStorage.getItem('roadwatch_preferred_city') : null;
       if (preferred) {
         const city = CITIES.find(c => c.name === preferred);
@@ -173,24 +203,17 @@ function LocateMeButton({ onLocate, onError }: { onLocate: (coords: { lat: numbe
           return;
         }
       }
-      // 2. Try IP geolocation
-      const ipCoords = await fetchIPGeolocation();
       setIsLocating(false);
-      if (ipCoords) {
-        map.setView([ipCoords.lat, ipCoords.lng], 15, { animate: true });
-        onLocateRef.current(ipCoords);
-      } else {
-        onErrorRef.current('Could not detect your location. Please select a city from the Region dropdown.');
-      }
+      onErrorRef.current('Could not detect your location. Please select a city from the Region dropdown.');
     };
 
-    // On HTTP (localhost), skip browser GPS and go directly to fallback
+    // On HTTP (non-secure context), skip browser GPS and go directly to fallback
     if (!isSecureContext || !navigator.geolocation) {
       await resolveFromFallback();
       return;
     }
 
-    // On HTTPS, try browser GPS first
+    // Try browser GPS with double-attempt (High Accuracy ➔ Standard Speed fallback)
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const lat = position.coords.latitude;
@@ -200,10 +223,27 @@ function LocateMeButton({ onLocate, onError }: { onLocate: (coords: { lat: numbe
         onLocateRef.current({ lat, lng });
       },
       async () => {
-        // GPS denied/failed — fall through to preferred city or IP
-        await resolveFromFallback();
+        // High accuracy failed or timed out — try standard Wi-Fi/cellular triangulation
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              setIsLocating(false);
+              map.setView([lat, lng], 15, { animate: true });
+              onLocateRef.current({ lat, lng });
+            },
+            async () => {
+              // Both browser methods failed — run IP-first fallback
+              await resolveFromFallback();
+            },
+            { enableHighAccuracy: false, timeout: 3000 }
+          );
+        } else {
+          await resolveFromFallback();
+        }
       },
-      { enableHighAccuracy: true, timeout: 5000 }
+      { enableHighAccuracy: true, timeout: 3000 }
     );
   };
 
@@ -212,7 +252,7 @@ function LocateMeButton({ onLocate, onError }: { onLocate: (coords: { lat: numbe
       type="button"
       onClick={handleClick}
       disabled={isLocating}
-      className="absolute bottom-6 left-6 z-[1000] bg-white/95 dark:bg-slate-950/90 text-slate-700 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl flex items-center gap-1.5 backdrop-blur-md active:scale-95 transition-all text-xs font-bold"
+      className="absolute bottom-6 left-6 z-[1000] bg-white/95 dark:bg-slate-950/90 text-slate-700 dark:text-slate-100 hover:text-slate-600 dark:hover:text-slate-400 disabled:opacity-50 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl flex items-center gap-1.5 backdrop-blur-md active:scale-95 transition-all text-xs font-bold"
       style={{ pointerEvents: 'auto' }}
     >
       <Compass className="h-4.5 w-4.5 text-emerald-400 animate-spin" style={{ animationDuration: isLocating ? '1s' : '8s' }} />
@@ -224,11 +264,51 @@ function LocateMeButton({ onLocate, onError }: { onLocate: (coords: { lat: numbe
 function ResizeListener() {
   const map = useMap();
   useEffect(() => {
-    map.invalidateSize();
-    const timer = setTimeout(() => {
+    const container = map.getContainer();
+    if (!container) return;
+
+    // Force complete redraw: invalidate size and reset view to reload all tiles
+    const forceRedraw = () => {
       map.invalidateSize();
-    }, 450);
-    return () => clearTimeout(timer);
+      try {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        if (center && zoom) {
+          map.setView(center, zoom, { animate: false });
+        }
+      } catch (e) {
+        // ignore if map center is not set yet
+      }
+    };
+
+    // Use ResizeObserver to detect layout shifts and dynamic height changes
+    const resizeObserver = new ResizeObserver(() => {
+      forceRedraw();
+    });
+
+    resizeObserver.observe(container);
+
+    // Run progressive delayed checks to catch dynamic hydration settled frames
+    const timers = [
+      setTimeout(forceRedraw, 50),
+      setTimeout(forceRedraw, 150),
+      setTimeout(forceRedraw, 300),
+      setTimeout(forceRedraw, 600),
+      setTimeout(forceRedraw, 1200),
+      setTimeout(forceRedraw, 2500),
+      setTimeout(forceRedraw, 5000),
+    ];
+
+    const handleResize = () => {
+      forceRedraw();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      resizeObserver.disconnect();
+      timers.forEach(clearTimeout);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [map]);
   return null;
 }
@@ -236,11 +316,46 @@ function ResizeListener() {
 // Controller to handle center changes reactively
 function MapController({ center }: { center: [number, number] }) {
   const map = useMap();
+  const lastCenterRef = useRef<[number, number] | null>(null);
+
   useEffect(() => {
+    if (lastCenterRef.current) {
+      const dist = Math.abs(lastCenterRef.current[0] - center[0]) + Math.abs(lastCenterRef.current[1] - center[1]);
+      if (dist < 0.005) {
+        // Dragging map in small steps - let manual pans change coordinates smoothly without resetting map view
+        lastCenterRef.current = center;
+        return;
+      }
+    }
+    
+    lastCenterRef.current = center;
     map.invalidateSize();
     const targetZoom = map.getZoom() < 14 ? 15 : map.getZoom();
     map.setView(center, targetZoom, { animate: true });
   }, [center[0], center[1], map]);
+
+  return null;
+}
+
+// Controller to sync map movement center back to form coordinates
+function MapCenterSync({ onCoordinatesChange, enabled }: { onCoordinatesChange?: (coords: { lat: number; lng: number }) => void; enabled: boolean }) {
+  const map = useMap();
+
+  useMapEvents({
+    move() {
+      if (enabled && onCoordinatesChange) {
+        const center = map.getCenter();
+        onCoordinatesChange({ lat: Number(center.lat.toFixed(5)), lng: Number(center.lng.toFixed(5)) });
+      }
+    },
+    moveend() {
+      if (enabled && onCoordinatesChange) {
+        const center = map.getCenter();
+        onCoordinatesChange({ lat: Number(center.lat.toFixed(5)), lng: Number(center.lng.toFixed(5)) });
+      }
+    }
+  });
+
   return null;
 }
 
@@ -328,7 +443,7 @@ function MapClickHandler({ onClick }: { onClick: (coords: { lat: number; lng: nu
 
 function MapTypeControl({ mapType, setMapType }: { mapType: 'roadmap' | 'satellite'; setMapType: (type: 'roadmap' | 'satellite') => void }) {
   return (
-    <div className="absolute top-4 right-4 z-[1000] bg-white/95 dark:bg-slate-950/95 rounded-xl p-1 border border-slate-200 dark:border-slate-800 shadow-2xl flex gap-1 backdrop-blur-md">
+    <div className="absolute bottom-8 right-4 z-[1000] bg-white/95 dark:bg-slate-950/95 rounded-xl p-1 border border-slate-200 dark:border-slate-800 shadow-2xl flex gap-1 backdrop-blur-md">
       <button
         type="button"
         onClick={(e) => {
@@ -337,9 +452,14 @@ function MapTypeControl({ mapType, setMapType }: { mapType: 'roadmap' | 'satelli
         }}
         className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
           mapType === 'roadmap'
-            ? 'bg-blue-600 text-white shadow-md animate-none'
+            ? 'text-white shadow-md animate-none'
             : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-250'
         }`}
+        style={
+          mapType === 'roadmap'
+            ? { backgroundColor: '#4b5563', color: '#ffffff' }
+            : undefined
+        }
       >
         GMaps Light
       </button>
@@ -351,9 +471,14 @@ function MapTypeControl({ mapType, setMapType }: { mapType: 'roadmap' | 'satelli
         }}
         className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
           mapType === 'satellite'
-            ? 'bg-blue-600 text-white shadow-md animate-none'
+            ? 'text-white shadow-md animate-none'
             : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-250'
         }`}
+        style={
+          mapType === 'satellite'
+            ? { backgroundColor: '#4b5563', color: '#ffffff' }
+            : undefined
+        }
       >
         GMaps Satellite
       </button>
@@ -365,37 +490,96 @@ function MapTypeControl({ mapType, setMapType }: { mapType: 'roadmap' | 'satelli
 
 function CitySelectorControl({ selectedCity, onCitySelect }: { selectedCity: string; onCitySelect: (name: string, coords: [number, number]) => void }) {
   const map = useMap();
+  const [selectedState, setSelectedState] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const name = e.target.value;
-    if (!name) return;
-    const city = CITIES.find(c => c.name === name);
-    if (city) {
-      map.setView(city.coords as [number, number], 13, { animate: true });
-      onCitySelect(name, city.coords as [number, number]);
+  // Keep state selection in sync when selectedCity changes from outside
+  useEffect(() => {
+    if (selectedCity) {
+      const stateObj = INDIA_DISTRICTS.find(s =>
+        s.districts.some(d => d.name === selectedCity)
+      );
+      if (stateObj) {
+        setSelectedState(stateObj.state);
+      }
+    }
+  }, [selectedCity]);
+
+  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const stateName = e.target.value;
+    setSelectedState(stateName);
+    onCitySelect('', [0, 0]);
+  };
+
+  const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const districtName = e.target.value;
+    if (!districtName) {
+      onCitySelect('', [0, 0]);
+      return;
+    }
+    const stateObj = INDIA_DISTRICTS.find(s => s.state === selectedState);
+    if (stateObj) {
+      const district = stateObj.districts.find(d => d.name === districtName);
+      if (district) {
+        map.setView(district.coords as [number, number], 13, { animate: true });
+        onCitySelect(districtName, district.coords as [number, number]);
+      }
     }
   };
 
+  const availableDistricts = selectedState
+    ? INDIA_DISTRICTS.find(s => s.state === selectedState)?.districts || []
+    : [];
+
   return (
-    <div className="absolute top-4 left-14 z-[1000] bg-white/95 dark:bg-slate-950/95 rounded-xl p-1 border border-slate-200 dark:border-slate-800 shadow-2xl flex gap-1 items-center backdrop-blur-md">
-      <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 px-1.5">Region:</span>
-      <select
-        value={selectedCity}
-        onChange={handleChange}
-        className="bg-transparent text-slate-700 dark:text-white border-none focus:outline-none focus:ring-0 text-[10px] font-extrabold pr-2 cursor-pointer uppercase text-blue-600 dark:text-blue-400 select-custom"
-        style={{ WebkitAppearance: 'none', MozAppearance: 'none' }}
-      >
-        <option value="" className="bg-white dark:bg-slate-950 text-slate-400">Select District...</option>
-        {INDIA_DISTRICTS.map((stateGroup) => (
-          <optgroup key={stateGroup.state} label={stateGroup.state} className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300">
-            {stateGroup.districts.map((district) => (
-              <option key={district.name} value={district.name} className="bg-white dark:bg-slate-950 text-slate-800 dark:text-white font-bold">
-                {district.name}
+    <div className="absolute top-4 left-14 z-[1000] bg-white/95 dark:bg-slate-950/95 rounded-xl p-2 border border-slate-200 dark:border-slate-800 shadow-2xl flex gap-2 items-center backdrop-blur-md">
+      {/* State Dropdown */}
+      <div className="flex items-center gap-1">
+        <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 px-0.5">State:</span>
+        <div className="relative flex items-center bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-lg px-2 py-1">
+          <select
+            value={selectedState}
+            onChange={handleStateChange}
+            className="bg-transparent text-slate-800 dark:text-slate-100 border-none focus:outline-none focus:ring-0 text-[10px] font-extrabold pr-4 cursor-pointer uppercase select-custom outline-none appearance-none"
+            style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+          >
+            <option value="" className="bg-white dark:bg-navy-950 text-slate-400 font-bold">Select State...</option>
+            {INDIA_DISTRICTS.map((stateGroup) => (
+              <option key={stateGroup.state} value={stateGroup.state} className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white font-bold">
+                {stateGroup.state}
               </option>
             ))}
-          </optgroup>
-        ))}
-      </select>
+          </select>
+          <ChevronDown className="h-3 w-3 text-slate-450 dark:text-slate-400 absolute right-1.5 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Divider and District Dropdown - dynamically rendered after selecting state */}
+      {selectedState && (
+        <>
+          <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-0.5" />
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 px-0.5">District:</span>
+            <div className="relative flex items-center bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-lg px-2 py-1">
+              <select
+                value={selectedCity}
+                onChange={handleDistrictChange}
+                className="bg-transparent text-slate-800 dark:text-slate-100 border-none focus:outline-none focus:ring-0 text-[10px] font-extrabold pr-4 cursor-pointer uppercase select-custom text-slate-600 dark:text-slate-400 outline-none appearance-none"
+                style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+              >
+                <option value="" className="bg-white dark:bg-navy-950 text-slate-400 font-bold">
+                  Select District...
+                </option>
+                {availableDistricts.map((district) => (
+                  <option key={district.name} value={district.name} className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white font-bold">
+                    {district.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="h-3 w-3 text-slate-450 dark:text-slate-400 absolute right-1.5 pointer-events-none" />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -439,6 +623,28 @@ export default function RealMap({
 }: RealMapProps) {
   const [mapType, setMapType] = useState<'roadmap' | 'satellite'>('roadmap');
   const [errorMessage, setErrorMessage] = useState('');
+  const [tileUrl, setTileUrl] = useState('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const observer = new MutationObserver(() => {
+        const isDark = document.documentElement.classList.contains('dark');
+        setTileUrl(isDark 
+          ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+          : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+        );
+      });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+      
+      const isDark = document.documentElement.classList.contains('dark');
+      setTileUrl(isDark 
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' 
+        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+      );
+      
+      return () => observer.disconnect();
+    }
+  }, []);
   
   const [selectedCity, setSelectedCity] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -458,9 +664,13 @@ export default function RealMap({
     setSelectedCity(name);
     setHasAutolocated(true); // Stop auto-locating on mount since we loaded a preferred/selected region
     if (typeof window !== 'undefined') {
-      localStorage.setItem('roadwatch_preferred_city', name);
+      if (name) {
+        localStorage.setItem('roadwatch_preferred_city', name);
+      } else {
+        localStorage.removeItem('roadwatch_preferred_city');
+      }
     }
-    if (onCoordinatesChange) {
+    if (name && onCoordinatesChange) {
       onCoordinatesChange({ lat: coords[0], lng: coords[1] });
     }
   };
@@ -539,11 +749,25 @@ export default function RealMap({
   };
 
   return (
-    <div className="w-full h-full min-h-[400px] relative rounded-xl overflow-hidden border border-card-border" style={{ height: '100%' }}>
+    <div 
+      className={`w-full h-full relative rounded-xl overflow-hidden border border-card-border ${!draggablePosition ? 'min-h-[400px]' : 'min-h-0'}`} 
+      style={{ height: '100%' }}
+    >
+      
+      {/* Static Centered Orange Pin Overlay for Geolocation */}
+      {draggablePosition && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] pointer-events-none flex flex-col items-center select-none">
+          <div className="h-8 w-8 rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center shadow-[0_0_15px_#f59e0b] animate-pulse">
+            <div className="h-3 w-3 rounded-full bg-amber-500"></div>
+          </div>
+          {/* Subtle anchor line pointing to center dot */}
+          <div className="h-2 w-[2px] bg-amber-500 mt-[-1px]"></div>
+        </div>
+      )}
       
       {isLoadingRoads && (
-        <div className="absolute top-4 right-4 z-[1000] bg-white/95 dark:bg-slate-950/90 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase border border-blue-500/20 shadow-xl flex items-center gap-1.5 backdrop-blur-md">
-          <RefreshCw className="h-3 w-3 animate-spin text-blue-500" />
+        <div className="absolute top-4 right-4 z-[1000] bg-white/95 dark:bg-slate-950/90 text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase border border-slate-500/20 shadow-xl flex items-center gap-1.5 backdrop-blur-md">
+          <RefreshCw className="h-3 w-3 animate-spin text-slate-500" />
           <span>Streaming local road grid...</span>
         </div>
       )}
@@ -566,13 +790,18 @@ export default function RealMap({
         center={defaultCenter}
         zoom={selectedCity ? 12 : 11}
         className="w-full h-full"
-        style={{ background: '#0b1329', height: '100%', minHeight: '400px' }}
+        style={{ 
+          background: tileUrl.includes('dark') ? '#111827' : '#f3f4f6', 
+          height: '100%', 
+          minHeight: !draggablePosition ? '400px' : '100%' 
+        }}
       >
         <ResizeListener />
         {onMapBoundsChange && <MapBoundsListener onBoundsChange={onMapBoundsChange} />}
 
-        <RegionSyncController selectedCity={selectedCity} setSelectedCity={setSelectedCity} />
-        <CitySelectorControl selectedCity={selectedCity} onCitySelect={handleCitySelect} />
+         <RegionSyncController selectedCity={selectedCity} setSelectedCity={setSelectedCity} />
+         <CitySelectorControl selectedCity={selectedCity} onCitySelect={handleCitySelect} />
+         <MapCenterSync onCoordinatesChange={onCoordinatesChange} enabled={!!draggablePosition} />
 
         {/* Silently geolocate user on mount if no pre-defined coordinates are passed */}
         {!draggablePosition && (
@@ -591,9 +820,9 @@ export default function RealMap({
         <MapTypeControl mapType={mapType} setMapType={setMapType} />
 
         <TileLayer
-          attribution="&copy; Google Maps"
+          attribution={mapType === 'roadmap' ? "&copy; OpenStreetMap &copy; CartoDB" : "&copy; Google Maps"}
           url={mapType === 'roadmap' 
-            ? "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}" 
+            ? tileUrl 
             : "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"}
         />
 
@@ -670,25 +899,7 @@ export default function RealMap({
           );
         })}
 
-        {/* Render draggable pin if position is provided */}
-        {draggablePosition && (
-          <Marker
-            position={[draggablePosition.lat, draggablePosition.lng]}
-            icon={draggableIcon}
-            draggable={true}
-            eventHandlers={markerHandlers}
-          >
-            <Popup>
-              <div className="text-slate-900 font-sans p-1 text-center">
-                <span className="font-bold text-[10px] uppercase text-amber-600">Reporting Location Pin</span>
-                <p className="text-[11px] font-mono mt-1 font-bold">
-                  {draggablePosition.lat}, {draggablePosition.lng}
-                </p>
-                <p className="text-[9px] text-slate-500 mt-0.5">Drag to adjust exact location of road damage</p>
-              </div>
-            </Popup>
-          </Marker>
-        )}
+        {/* Old standard draggable Marker removed - replaced by static centered overlay below */}
       </MapContainer>
 
     </div>

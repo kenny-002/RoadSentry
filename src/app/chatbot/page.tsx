@@ -10,7 +10,7 @@ export default function ChatbotPage() {
       
       {/* Header */}
       <div>
-        <span className="text-[10px] uppercase font-black tracking-wider text-blue-500 flex items-center gap-1">
+        <span className="text-[10px] uppercase font-black tracking-wider text-slate-500 flex items-center gap-1">
           <Sparkles className="h-3 w-3 text-yellow-400" />
           <span>Conversational assistant</span>
         </span>
@@ -35,7 +35,7 @@ export default function ChatbotPage() {
           <div className="glass-panel p-5 bg-opacity-65 dark:bg-opacity-25 border border-card-border flex flex-col gap-5 h-full justify-between">
             <div className="space-y-4">
               <h3 className="font-extrabold text-sm text-slate-800 dark:text-white flex items-center gap-1.5 border-b border-slate-200 dark:border-navy-800/80 pb-3">
-                <MessageCircle className="h-4.5 w-4.5 text-blue-500" />
+                <MessageCircle className="h-4.5 w-4.5 text-slate-500" />
                 <span>Conversational Help</span>
               </h3>
 
@@ -61,8 +61,8 @@ export default function ChatbotPage() {
               </div>
             </div>
 
-            <div className="p-3.5 bg-blue-600/5 border border-blue-500/10 rounded-lg text-[10px] text-slate-550 dark:text-slate-450 leading-relaxed font-medium flex gap-2">
-              <ShieldCheck className="h-4.5 w-4.5 text-blue-500 shrink-0 mt-0.5" />
+            <div className="p-3.5 bg-slate-600/5 border border-slate-500/10 rounded-lg text-[10px] text-slate-550 dark:text-slate-450 leading-relaxed font-medium flex gap-2">
+              <ShieldCheck className="h-4.5 w-4.5 text-slate-500 shrink-0 mt-0.5" />
               <span>Multi-language translation supports English, Tamil, Hindi, and Spanish, aligning with municipal demographics.</span>
             </div>
           </div>

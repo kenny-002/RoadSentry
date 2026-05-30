@@ -197,14 +197,14 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-6">
         
         {/* Page Logo & Header */}
-        <div className="text-center space-y-2.5">
-          <div className="h-12 w-12 bg-gradient-to-tr from-blue-600 to-emerald-500 rounded-xl text-white font-bold flex items-center justify-center mx-auto shadow-lg glow-blue">
-            <ShieldAlert className="h-6 w-6 animate-pulse" />
+        <div className="text-center space-y-4">
+          <div className="flex justify-center animate-in fade-in duration-300">
+            <img src="/logo.png" alt="Road Sentry Logo" className="h-20 w-auto object-contain transition-all duration-200 hover:scale-[1.02]" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white tracking-tight">
-            {viewMode === 'login' ? 'Sign In to RoadWatch' : 'Register Citizen Account'}
+            {viewMode === 'login' ? 'Sign In to Road Sentry' : 'Register Citizen Account'}
           </h2>
-          <p className="text-xs text-slate-555 dark:text-slate-400 max-w-xs mx-auto">
+          <p className="text-xs text-slate-550 dark:text-slate-450 max-w-xs mx-auto">
             {viewMode === 'login' 
               ? 'Track complaint tickets, file defects, and review contractor grading.'
               : 'Sign up to report potholes, view contractor metrics, and access quality transparency audits.'

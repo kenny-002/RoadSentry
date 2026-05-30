@@ -37,7 +37,7 @@ export default function Timeline() {
     },
     {
       title: 'Citizen Verification',
-      desc: 'Road is marked open on RoadWatch; citizens confirm relay quality.',
+      desc: 'Road is marked open on Road Sentry; citizens confirm relay quality.',
       duration: 'Ongoing',
       status: 'upcoming',
     },
@@ -73,7 +73,7 @@ export default function Timeline() {
       {/* Header */}
       <div>
         <h3 className="font-extrabold text-lg text-slate-800 dark:text-white flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-blue-500" />
+          <Calendar className="h-5 w-5 text-slate-500" />
           <span>Relaying Lifecycle & Activity</span>
         </h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Timeline standards for municipal road works and recent completions</p>
@@ -94,7 +94,7 @@ export default function Timeline() {
                   step.status === 'completed' 
                     ? 'bg-emerald-500 border-emerald-500 text-white' 
                     : step.status === 'active'
-                    ? 'bg-blue-500 border-blue-500 text-white animate-pulse'
+                    ? 'bg-slate-500 border-slate-500 text-white animate-pulse'
                     : 'bg-white dark:bg-navy-950 border-slate-300 dark:border-navy-700 text-slate-400'
                 }`}>
                   {step.status === 'completed' && <span className="h-1.5 w-1.5 rounded-full bg-white"></span>}

@@ -13,28 +13,28 @@ export default function FeatureCard({ title, description, iconName, color }: Fea
 
   const colorConfig = {
     blue: {
-      bg: 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400',
+      bg: 'bg-slate-100 dark:bg-navy-800 border-slate-200 dark:border-navy-700 text-slate-750 dark:text-slate-300',
       glow: 'glow-blue',
-      hover: 'hover:border-blue-500/40',
-      gradient: 'from-blue-600 to-blue-400'
+      hover: 'hover:border-slate-350 dark:hover:border-navy-600',
+      gradient: 'from-slate-800 to-slate-600 dark:from-slate-200 dark:to-slate-400'
     },
     emerald: {
-      bg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-slate-100 dark:bg-navy-800 border-slate-200 dark:border-navy-700 text-slate-750 dark:text-slate-300',
       glow: 'glow-emerald',
-      hover: 'hover:border-emerald-500/40',
-      gradient: 'from-emerald-600 to-emerald-400'
+      hover: 'hover:border-slate-350 dark:hover:border-navy-600',
+      gradient: 'from-slate-800 to-slate-600 dark:from-slate-200 dark:to-slate-400'
     },
     amber: {
-      bg: 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400',
+      bg: 'bg-slate-100 dark:bg-navy-800 border-slate-200 dark:border-navy-700 text-slate-750 dark:text-slate-300',
       glow: 'glow-amber',
-      hover: 'hover:border-amber-500/40',
-      gradient: 'from-amber-600 to-amber-400'
+      hover: 'hover:border-slate-350 dark:hover:border-navy-600',
+      gradient: 'from-slate-800 to-slate-600 dark:from-slate-200 dark:to-slate-400'
     },
     purple: {
-      bg: 'bg-purple-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400',
+      bg: 'bg-slate-100 dark:bg-navy-800 border-slate-200 dark:border-navy-700 text-slate-750 dark:text-slate-300',
       glow: 'glow-purple',
-      hover: 'hover:border-purple-500/40',
-      gradient: 'from-purple-600 to-purple-400'
+      hover: 'hover:border-slate-350 dark:hover:border-navy-600',
+      gradient: 'from-slate-800 to-slate-600 dark:from-slate-200 dark:to-slate-400'
     }
   };
 

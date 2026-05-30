@@ -22,7 +22,7 @@ export default function AnalyticsCards() {
       value: total,
       desc: 'Active & resolved items',
       icon: ShieldAlert,
-      color: 'text-blue-500 bg-blue-500/10 border-blue-500/20'
+      color: 'text-slate-500 bg-slate-500/10 border-slate-500/20'
     },
     {
       title: 'Resolved Projects',

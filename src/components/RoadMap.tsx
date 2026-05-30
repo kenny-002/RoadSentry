@@ -19,6 +19,23 @@ const RealMap = dynamic(() => import('./RealMap'), {
   )
 });
 
+// Robust fetch with abort timeout to prevent hanging on local/offline networks
+const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 2500): Promise<Response> => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+};
+
 interface RoadMapProps {
   onSelectRoad: (road: Road) => void;
   selectedRoadId?: string;
@@ -72,7 +89,7 @@ export default function RoadMap({ onSelectRoad, selectedRoadId }: RoadMapProps) 
       const query = `[out:json][timeout:15];(way["highway"~"${queryType}"](${south},${west},${north},${east}););out geom;`;
       const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
       
-      const res = await fetch(url);
+      const res = await fetchWithTimeout(url, {}, 3000);
       if (!res.ok) throw new Error('Overpass query failed');
       const data = await res.json();
       
@@ -161,11 +178,11 @@ export default function RoadMap({ onSelectRoad, selectedRoadId }: RoadMapProps) 
     setSearchError('');
     try {
       const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query + ', India')}&format=json&polygon_geojson=1&limit=3`;
-      const res = await fetch(url, {
+      const res = await fetchWithTimeout(url, {
         headers: {
           'User-Agent': 'RoadWatch-App/1.0'
         }
-      });
+      }, 3000);
       if (!res.ok) throw new Error('Nominatim query failed');
       const data = await res.json();
 

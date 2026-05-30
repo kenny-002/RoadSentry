@@ -61,10 +61,10 @@ export const contractors: Contractor[] = [
 ];
 
 export const authorities: Authority[] = [
-  { id: 'authority-1', name: 'Er. Rajesh Kumar', role: 'Executive Engineer (NH Division)', region: 'Zone 1 (North)', email: 'rajesh.kumar@roadwatch.gov', phone: '+91 98450 12341' },
-  { id: 'authority-2', name: 'Er. M. Anbarasan', role: 'Assistant Executive Engineer (SH Division)', region: 'Zone 2 (Central)', email: 'm.anbarasan@roadwatch.gov', phone: '+91 98450 12342' },
-  { id: 'authority-3', name: 'Er. S. Meenakshi', role: 'Divisional Engineer (MDR Division)', region: 'Zone 3 (South)', email: 's.meenakshi@roadwatch.gov', phone: '+91 98450 12343' },
-  { id: 'authority-4', name: 'Er. K. Raghavan', role: 'Ward Officer (Local Roads Division)', region: 'Zone 4 (East)', email: 'k.raghavan@roadwatch.gov', phone: '+91 98450 12344' },
+  { id: 'authority-1', name: 'Er. Rajesh Kumar', role: 'Executive Engineer (NH Division)', region: 'Zone 1 (North)', email: 'rajesh.kumar@roadsentry.gov', phone: '+91 98450 12341' },
+  { id: 'authority-2', name: 'Er. M. Anbarasan', role: 'Assistant Executive Engineer (SH Division)', region: 'Zone 2 (Central)', email: 'm.anbarasan@roadsentry.gov', phone: '+91 98450 12342' },
+  { id: 'authority-3', name: 'Er. S. Meenakshi', role: 'Divisional Engineer (MDR Division)', region: 'Zone 3 (South)', email: 's.meenakshi@roadsentry.gov', phone: '+91 98450 12343' },
+  { id: 'authority-4', name: 'Er. K. Raghavan', role: 'Ward Officer (Local Roads Division)', region: 'Zone 4 (East)', email: 'k.raghavan@roadsentry.gov', phone: '+91 98450 12344' },
 ];
 
 export const roads: Road[] = [

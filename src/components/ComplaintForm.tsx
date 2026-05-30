@@ -244,16 +244,29 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
     setAiConfidence(confidence);
   }, [issueType, description, imageUrl]);
 
-  // GPS coordinates fetch with IP geolocation fallback
+  // GPS coordinates fetch with robust dual-try and IP-first geolocation fallback
   const handleFetchGPS = async () => {
     setIsLocating(true);
     setErrors(prev => ({ ...prev, gps: '' }));
 
     const isSecureContext = typeof window !== 'undefined' && window.isSecureContext;
 
-    // Helper: resolve location from preferred city → IP → null (no Chennai hardcoding)
+    // Helper: resolve actual physical location from IP first, then stored preferred city
     const resolveFromFallback = async () => {
-      // 1. Preferred city stored from region selector
+      // 1. Try IP Geolocation first to get actual physical coordinates
+      try {
+        const ipCoords = await fetchIPGeolocation();
+        if (ipCoords) {
+          setLatitude(Number(ipCoords.lat.toFixed(5)));
+          setLongitude(Number(ipCoords.lng.toFixed(5)));
+          setIsLocating(false);
+          return;
+        }
+      } catch (err) {
+        console.warn('IP Geolocation failed in fallback:', err);
+      }
+
+      // 2. Only if IP fails, fall back to preferred city from the region selector
       const preferred = typeof window !== 'undefined' ? localStorage.getItem('roadwatch_preferred_city') : null;
       if (preferred) {
         const city = CITIES.find(c => c.name === preferred);
@@ -264,23 +277,16 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
           return;
         }
       }
-      // 2. IP geolocation
-      const ipCoords = await fetchIPGeolocation();
       setIsLocating(false);
-      if (ipCoords) {
-        setLatitude(Number(ipCoords.lat.toFixed(5)));
-        setLongitude(Number(ipCoords.lng.toFixed(5)));
-      }
-      // If IP also fails, leave coordinates blank — user can drag the pin manually
     };
 
-    // On HTTP (localhost), browser always denies GPS — skip directly to fallback
+    // On HTTP (non-secure context), browser blocks GPS — skip directly to fallback
     if (!isSecureContext || !navigator.geolocation) {
       await resolveFromFallback();
       return;
     }
 
-    // On HTTPS, try real browser GPS
+    // Try real browser GPS with double-attempt (High Accuracy ➔ Standard Speed fallback)
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLatitude(Number(position.coords.latitude.toFixed(5)));
@@ -288,9 +294,25 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
         setIsLocating(false);
       },
       async () => {
-        await resolveFromFallback();
+        // High accuracy failed or timed out — try standard Wi-Fi/cellular triangulation
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              setLatitude(Number(pos.coords.latitude.toFixed(5)));
+              setLongitude(Number(pos.coords.longitude.toFixed(5)));
+              setIsLocating(false);
+            },
+            async () => {
+              // Both browser methods failed — run IP-first fallback
+              await resolveFromFallback();
+            },
+            { enableHighAccuracy: false, timeout: 3000 }
+          );
+        } else {
+          await resolveFromFallback();
+        }
       },
-      { enableHighAccuracy: true, timeout: 5000 }
+      { enableHighAccuracy: true, timeout: 3000 }
     );
   };
 
@@ -316,7 +338,14 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
     if (roadId === 'custom-road' && !customRoadName.trim()) newErrors.customRoadName = 'Please enter the custom road name.';
     if (!description || description.length < 15) newErrors.description = 'Please provide a detailed description (min 15 chars).';
     if (!reporterName) newErrors.reporterName = 'Reporter name is required.';
-    if (!reporterPhone) newErrors.reporterPhone = 'Mobile number is required.';
+    if (!reporterPhone) {
+      newErrors.reporterPhone = 'Mobile number is required.';
+    } else {
+      const cleaned = reporterPhone.replace(/\D/g, '');
+      if (cleaned.length !== 10) {
+        newErrors.reporterPhone = 'Mobile number must be exactly 10 digits.';
+      }
+    }
     if (!latitude || !longitude) newErrors.gps = 'Please attach location GPS coordinates.';
 
     if (Object.keys(newErrors).length > 0) {
@@ -497,10 +526,10 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-6 max-w-3xl mx-auto">
             
-            {/* Left Column: Form Details */}
-            <div className="space-y-5">
+            {/* Form Details */}
+            <div className="space-y-6">
               
               {/* Select Road */}
               <div className="space-y-2">
@@ -565,7 +594,7 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
                       className={`py-2 rounded-lg text-xs font-bold uppercase transition-all capitalize border ${
                         issueType === type
                           ? 'bg-blue-600 text-white border-blue-600 shadow glow-blue'
-                          : 'bg-white/40 dark:bg-navy-900/40 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-navy-800 hover:bg-white/70 dark:hover:bg-navy-850'
+                          : 'bg-white/40 dark:bg-navy-900/40 text-slate-650 hover:bg-white/70 dark:hover:bg-navy-850'
                       }`}
                     >
                       {type}
@@ -595,18 +624,6 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
                   </p>
                 )}
               </div>
-
-            </div>
-
-            {/* Right Column: Files & Geo-tagging */}
-            <div className="space-y-5">
-              
-              {/* Image Upload Box */}
-              <UploadBox 
-                onFileSelect={(url) => setImageUrl(url)}
-                selectedFileUrl={imageUrl}
-                onClear={() => setImageUrl('')}
-              />
 
               {/* GPS Coordinates */}
               <div className="space-y-2.5">
@@ -650,7 +667,7 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
                 )}
 
                 {/* Leaflet Draggable Geolocation Selector Map */}
-                <div className="w-full h-48 border border-slate-200 dark:border-navy-800 rounded-xl overflow-hidden mt-2 relative z-0">
+                <div className="w-full h-80 border border-slate-200 dark:border-navy-800 rounded-xl overflow-hidden mt-2 relative z-0">
                   <RealMap
                     roads={roads}
                     selectedRoadId={roadId}
@@ -665,6 +682,18 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
                 </div>
               </div>
 
+            </div>
+
+            {/* Files & Geo-tagging */}
+            <div className="space-y-6">
+              
+              {/* Image Upload Box */}
+              <UploadBox 
+                onFileSelect={(url) => setImageUrl(url)}
+                selectedFileUrl={imageUrl}
+                onClear={() => setImageUrl('')}
+              />
+
               {/* AI Severity Indicator Box */}
               {(description || imageUrl) && (
                 <div className="p-4 bg-slate-100 dark:bg-navy-900/50 rounded-xl border border-slate-200 dark:border-navy-800 text-xs flex items-start gap-3 animate-in fade-in duration-200">
@@ -672,7 +701,7 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
                     <Sparkles className="h-4.5 w-4.5 text-yellow-400 animate-pulse" />
                   </div>
                   <div className="flex-1">
-                    <span className="font-extrabold uppercase text-[10px] text-blue-500">RoadWatch AI Assistant</span>
+                    <span className="font-extrabold uppercase text-[10px] text-blue-500">Road Sentry AI Assistant</span>
                     <p className="text-slate-700 dark:text-slate-200 font-semibold mt-1">
                       Predicted Severity: <span className={`font-black ${
                         aiSeverity === 'Critical' ? 'text-red-500' : aiSeverity === 'Medium' ? 'text-amber-500' : 'text-emerald-500'
@@ -689,7 +718,7 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
           </div>
 
           {/* Reporter Details (Row) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-navy-800/80">
+          <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 dark:border-navy-800/80 max-w-3xl mx-auto w-full">
             <div className="space-y-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                 Citizen Reporter Name
@@ -717,8 +746,14 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
               <input
                 type="tel"
                 value={reporterPhone}
-                onChange={(e) => setReporterPhone(e.target.value)}
-                placeholder="+91 XXXXX XXXXX"
+                onChange={(e) => {
+                  const cleaned = e.target.value.replace(/\D/g, '');
+                  if (cleaned.length <= 10) {
+                    setReporterPhone(cleaned);
+                  }
+                }}
+                maxLength={10}
+                placeholder="10-digit mobile number"
                 className={`w-full px-3 py-2 border rounded-lg text-sm bg-white/70 dark:bg-navy-950/70 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-slate-100 ${
                   errors.reporterPhone ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 dark:border-navy-700'
                 }`}
@@ -733,7 +768,7 @@ export default function ComplaintForm({ preselectedRoadId = '', onSuccessRedirec
           </div>
 
           {/* Submit Action */}
-          <div className="pt-2">
+          <div className="pt-2 max-w-3xl mx-auto w-full">
             <button
               type="submit"
               disabled={isSubmitting}

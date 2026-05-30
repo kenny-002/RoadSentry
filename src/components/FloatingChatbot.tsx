@@ -25,10 +25,10 @@ export default function FloatingChatbot() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const greetings: Record<string, string> = {
-    en: "Hi! I'm RoadWatch AI 👋 Ask me about road contractors, repair dates, or how to file a complaint.",
-    ta: "வணக்கம்! நான் ரோடுவாட்ச் AI. சாலை ஒப்பந்ததாரர்கள், பழுதுபார்க்கும் தேதிகள் பற்றி கேளுங்கள்.",
-    hi: "नमस्ते! मैं RoadWatch AI हूँ। सड़क ठेगेदार, मरम्मत की तारीखें या शिकायत के बारे में पूछें।",
-    es: "¡Hola! Soy RoadWatch AI. Pregúntame sobre contratistas o cómo reportar un problema."
+    en: "Hi! I'm Road Sentry AI 👋 Ask me about road contractors, repair dates, or how to file a complaint.",
+    ta: "வணக்கம்! நான் ரோடு சென்ட்ரி AI. சாலை ஒப்பந்ததாரர்கள், பழுதுபார்க்கும் தேதிகள் பற்றி கேளுங்கள்.",
+    hi: "नमस्ते! मैं Road Sentry AI हूँ। सड़क ठेगेदार, मरम्मत की तारीखें या शिकायत के बारे में पूछें।",
+    es: "¡Hola! Soy Road Sentry AI. Pregúntame sobre contratistas o cómo reportar un problema."
   };
 
   // Set welcome message when language changes or user logs in
@@ -86,7 +86,7 @@ export default function FloatingChatbot() {
         return `Budget for "${matchedRoad.name}": Sanctioned ₹${matchedRoad.sanctionedAmount}L, Spent ₹${matchedRoad.spentAmount}L — ${varianceText}.`;
       }
     }
-    if (text.includes('hello') || text.includes('hi') || text.includes('hey')) return "Hello! How can I help you with RoadWatch today?";
+    if (text.includes('hello') || text.includes('hi') || text.includes('hey')) return "Hello! How can I help you with Road Sentry today?";
     if (text.includes('budget') || text.includes('money')) return "Budget information is currently not displayed in this portal. Try asking about contractors or repair dates.";
     if (text.includes('thank')) return "You're welcome! Citizen vigilance keeps our roads accountable. 🌟";
     return "Try asking:\n• 'Who is responsible for Mount Road?'\n• 'When was OMR last repaired?'\n• 'How do I file a complaint?'";
@@ -142,22 +142,22 @@ export default function FloatingChatbot() {
         }`}
       >
         <div
-          className="flex flex-col overflow-hidden rounded-2xl shadow-2xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900"
+          className="flex flex-col overflow-hidden rounded-2xl shadow-2xl border border-slate-200 bg-white"
           style={{ height: '520px' }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white shrink-0">
+          <div className="flex items-center justify-between px-4 py-3 bg-[#1E3A5F] border-b border-[#3B82F6]/30 text-white shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 bg-white/20 rounded-xl flex items-center justify-center border border-white/30">
-                <Bot className="h-4 w-4" />
+              <div className="h-8 w-8 bg-[#3B82F6]/15 text-[#3B82F6] rounded-xl flex items-center justify-center border border-[#3B82F6]/35">
+                <Bot className="h-4 w-4 animate-pulse" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-extrabold">RoadWatch AI</span>
-                  <Sparkles className="h-3 w-3 text-yellow-300" />
+                  <span className="text-sm font-extrabold text-white">Road Sentry AI</span>
+                  <Sparkles className="h-3 w-3 text-[#3B82F6]" />
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-blue-100">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                <div className="flex items-center gap-1 text-[10px] text-slate-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#3B82F6] animate-pulse inline-block" />
                   <span>Smart City Agent • Online</span>
                 </div>
               </div>
@@ -165,7 +165,7 @@ export default function FloatingChatbot() {
             <div className="flex items-center gap-2">
               {userRole !== null && (
                 <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-lg px-2 py-1">
-                  <Globe className="h-3 w-3 text-blue-100" />
+                  <Globe className="h-3 w-3 text-[#3B82F6]" />
                   <select
                     value={lang}
                     onChange={(e) => setLang(e.target.value as 'en' | 'ta' | 'hi' | 'es')}
@@ -190,19 +190,19 @@ export default function FloatingChatbot() {
 
           {/* Body — Not logged in */}
           {userRole === null ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center bg-slate-50 dark:bg-navy-950">
-              <div className="h-16 w-16 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                <Lock className="h-7 w-7 text-blue-500" />
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center bg-slate-50">
+              <div className="h-16 w-16 rounded-full bg-[#1E3A5F]/10 border border-[#1E3A5F]/20 flex items-center justify-center">
+                <Lock className="h-7 w-7 text-[#1E3A5F]" />
               </div>
               <div>
-                <p className="font-extrabold text-slate-800 dark:text-white text-sm">Login Required</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[200px] leading-relaxed">
-                  Please sign in to chat with the RoadWatch AI Assistant.
+                <p className="font-extrabold text-slate-800 text-sm">Login Required</p>
+                <p className="text-xs text-slate-550 mt-1 max-w-[200px] leading-relaxed font-semibold">
+                  Please sign in to chat with the Road Sentry AI Assistant.
                 </p>
               </div>
               <a
                 href="/login"
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all active:scale-95 shadow"
+                className="px-5 py-2.5 bg-[#1E3A5F] hover:bg-[#152A47] text-white text-xs font-bold rounded-xl transition-all active:scale-95 shadow"
               >
                 Sign In
               </a>
@@ -210,7 +210,7 @@ export default function FloatingChatbot() {
           ) : (
             <>
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-50 dark:bg-navy-950/60"
+              <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#F8FAFC]"
                 style={{ scrollbarWidth: 'none' }}>
                 {messages.map((msg) => (
                   <div
@@ -219,8 +219,8 @@ export default function FloatingChatbot() {
                   >
                     <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 border ${
                       msg.sender === 'user'
-                        ? 'bg-blue-600 border-blue-500 text-white'
-                        : 'bg-white dark:bg-navy-800 border-slate-200 dark:border-navy-700 text-slate-500'
+                        ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white'
+                        : 'bg-white border-slate-200 text-slate-500'
                     }`}>
                       {msg.sender === 'user'
                         ? <User className="h-3.5 w-3.5" />
@@ -228,11 +228,11 @@ export default function FloatingChatbot() {
                     </div>
                     <div className={`max-w-[78%] px-3 py-2 rounded-2xl text-xs leading-relaxed font-medium ${
                       msg.sender === 'user'
-                        ? 'bg-blue-600 text-white rounded-br-none'
-                        : 'bg-white dark:bg-navy-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 rounded-bl-none shadow-sm'
+                        ? 'bg-[#EFF6FF] border border-[#3B82F6]/30 text-[#1E3A5F] rounded-br-none shadow-sm'
+                        : 'bg-white text-slate-700 border border-slate-200 rounded-bl-none shadow-sm'
                     }`}>
                       <p className="whitespace-pre-line">{msg.text}</p>
-                      <span className={`block text-[9px] mt-1 ${msg.sender === 'user' ? 'text-blue-200 text-right' : 'text-slate-400'}`}>
+                      <span className={`block text-[9px] mt-1 ${msg.sender === 'user' ? 'text-[#3B82F6] text-right font-semibold' : 'text-slate-400'}`}>
                         {msg.timestamp}
                       </span>
                     </div>
@@ -242,10 +242,10 @@ export default function FloatingChatbot() {
                 {/* Typing dots */}
                 {isTyping && (
                   <div className="flex items-end gap-2">
-                    <div className="h-7 w-7 rounded-full bg-white dark:bg-navy-800 border border-slate-200 dark:border-navy-700 flex items-center justify-center">
+                    <div className="h-7 w-7 rounded-full bg-white border border-slate-200 flex items-center justify-center">
                       <Bot className="h-3.5 w-3.5 text-slate-400" />
                     </div>
-                    <div className="bg-white dark:bg-navy-800 border border-slate-200 dark:border-navy-700 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm flex items-center gap-1">
+                    <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm flex items-center gap-1">
                       {[0, 150, 300].map(d => (
                         <span key={d} className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: `${d}ms` }} />
                       ))}
@@ -256,13 +256,13 @@ export default function FloatingChatbot() {
               </div>
 
               {/* Quick suggestions */}
-              <div className="px-3 pt-2 pb-1 flex gap-1.5 overflow-x-auto bg-white dark:bg-navy-900 border-t border-slate-100 dark:border-navy-800 shrink-0"
+              <div className="px-3 pt-2 pb-1 flex gap-1.5 overflow-x-auto bg-white border-t border-slate-100 shrink-0"
                 style={{ scrollbarWidth: 'none' }}>
                 {suggestedQueries.map((q, i) => (
                   <button
                     key={i}
                     onClick={() => handleSend(q)}
-                    className="shrink-0 px-2.5 py-1 bg-slate-100 dark:bg-navy-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-navy-700 rounded-full text-[10px] font-semibold transition-all whitespace-nowrap"
+                    className="shrink-0 px-2.5 py-1 bg-slate-50 hover:bg-[#3B82F6]/10 hover:text-[#1E3A5F] hover:border-[#3B82F6]/20 text-slate-600 border border-slate-200 rounded-full text-[10px] font-semibold transition-all whitespace-nowrap cursor-pointer animate-in fade-in"
                   >
                     {q.length > 28 ? q.slice(0, 27) + '…' : q}
                   </button>
@@ -270,14 +270,14 @@ export default function FloatingChatbot() {
               </div>
 
               {/* Input */}
-              <div className="flex gap-2 items-center px-3 py-3 bg-white dark:bg-navy-900 border-t border-slate-100 dark:border-navy-800 shrink-0">
+              <div className="flex gap-2 items-center px-3 py-3 bg-white border-t border-slate-100 shrink-0">
                 <button
                   onClick={handleVoiceInput}
                   disabled={isListening}
                   className={`p-2.5 rounded-xl border transition-all shrink-0 ${
                     isListening
                       ? 'bg-red-500/15 text-red-500 border-red-500/30 animate-pulse'
-                      : 'bg-slate-100 dark:bg-navy-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-navy-700 hover:bg-slate-200 dark:hover:bg-navy-700'
+                      : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
                   <Mic className="h-4 w-4" />
@@ -289,12 +289,12 @@ export default function FloatingChatbot() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
                   placeholder={isListening ? 'Listening...' : 'Ask anything about roads...'}
-                  className="flex-1 px-3 py-2 border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-950 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-white"
+                  className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] text-slate-800"
                 />
                 <button
                   onClick={() => handleSend(input)}
                   disabled={!input.trim()}
-                  className="p-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 dark:disabled:bg-navy-800 disabled:cursor-not-allowed text-white rounded-xl transition-all shadow hover:shadow-lg active:scale-95 shrink-0"
+                  className="p-2.5 bg-[#1E3A5F] hover:bg-[#152A47] disabled:bg-slate-100 disabled:cursor-not-allowed text-white rounded-xl transition-all shadow hover:shadow-lg active:scale-95 shrink-0 cursor-pointer"
                 >
                   <Send className="h-4 w-4" />
                 </button>
@@ -310,15 +310,15 @@ export default function FloatingChatbot() {
         style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999 }}
         className={`h-14 w-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-110 border-2 cursor-pointer ${
           isOpen
-            ? 'bg-slate-700 border-slate-600 text-white'
-            : 'bg-gradient-to-tr from-blue-600 to-blue-400 border-blue-500 text-white'
+            ? 'bg-slate-800 border-slate-700 text-white'
+            : 'bg-[#1E3A5F] border-[#3B82F6]/30 text-[#3B82F6]'
         }`}
         aria-label="Toggle AI Assistant"
       >
         {isOpen ? (
           <X className="h-6 w-6" />
         ) : (
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center animate-in zoom-in-50 duration-200">
             <Bot className="h-6 w-6" />
             {unread > 0 && (
               <span

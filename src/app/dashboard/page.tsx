@@ -1,83 +1,110 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import RoadMap from '../../components/RoadMap';
-import RoadDetailsPanel from '../../components/RoadDetailsPanel';
-import { Road } from '../../data/mockData';
+import React from 'react';
 import { useAppState } from '../../context/StateContext';
-import { Compass, Sparkles, Map, Info } from 'lucide-react';
+import { 
+  ChevronRight,
+  Map,
+  AlertTriangle,
+  ClipboardList
+} from 'lucide-react';
+import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { roads } = useAppState();
-  const [selectedRoadId, setSelectedRoadId] = useState<string | null>(null);
+  const { currentUser } = useAppState();
 
-  const selectedRoad = roads.find(r => r.id === selectedRoadId) || null;
-
-  const handleSelectRoad = useCallback((road: Road) => {
-    setSelectedRoadId(road.id);
-  }, []);
-
-  const handleClosePanel = useCallback(() => {
-    setSelectedRoadId(null);
-  }, []);
+  const featureCards = [
+    {
+      label: 'View Road Map',
+      href: '/roads',
+      desc: 'Browse city infrastructure',
+      image: '/card_road_map.png',
+      imageAlt: 'City road map illustration',
+      icon: Map
+    },
+    {
+      label: 'Report an Issue',
+      href: '/report',
+      desc: 'File a new road defect',
+      image: '/card_report_issue.png',
+      imageAlt: 'Reporting a road issue illustration',
+      icon: AlertTriangle
+    },
+    {
+      label: 'Track Complaint',
+      href: '/tracker',
+      desc: 'Check ticket status',
+      image: '/card_track_complaint.png',
+      imageAlt: 'Complaint tracking timeline illustration',
+      icon: ClipboardList
+    },
+  ];
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
-      
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
-        <div>
-          <span className="text-[10px] uppercase font-black tracking-wider text-blue-500 flex items-center gap-1">
-            <Sparkles className="h-3 w-3 text-yellow-400" />
-            <span>Interactive Audit Portal</span>
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white tracking-tight">
-            City Road Map & Condition Grid
-          </h1>
-          <p className="text-xs text-slate-550 dark:text-slate-450 mt-0.5">
-            Real-time status updates of National Highways (NH), State Highways (SH), and district corridors.
-          </p>
-        </div>
-      </div>
+    <div className="flex-1 w-full bg-slate-50">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
 
-      {/* Main Grid: Map & Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        
-        {/* Left: Map filters and Interactive SVG Map */}
-        <div className="lg:col-span-8 flex flex-col">
-          <RoadMap 
-            onSelectRoad={handleSelectRoad}
-            selectedRoadId={selectedRoadId || undefined}
-          />
-        </div>
-
-        {/* Right: Drawer Details panel */}
-        <div className="lg:col-span-4 flex flex-col min-h-[450px]">
-          {selectedRoad ? (
-            <RoadDetailsPanel 
-              road={selectedRoad}
-              onClose={handleClosePanel}
-            />
-          ) : (
-            // Sidebar Placeholder
-            <div className="glass-panel p-8 text-center flex flex-col items-center justify-center h-full bg-opacity-40 dark:bg-opacity-25 border border-card-border">
-              <div className="p-4 bg-slate-100 dark:bg-navy-900 text-slate-400 dark:text-slate-600 rounded-2xl border border-slate-200/50 dark:border-navy-850 mb-4 animate-pulse">
-                <Map className="h-8 w-8 text-blue-500" />
-              </div>
-              <h3 className="font-extrabold text-slate-800 dark:text-white text-base">Select Road Segment</h3>
-              <p className="text-xs text-slate-550 dark:text-slate-400 max-w-xs mt-1.5 leading-relaxed font-medium">
-                Click on any colored line coordinates inside the city map grid to reveal contractor scorecards, budgets, and open complaint tickets.
-              </p>
-              <div className="mt-5 p-3 bg-blue-600/5 border border-blue-500/10 rounded-lg text-[10px] text-slate-550 dark:text-slate-450 leading-relaxed font-medium max-w-xs flex gap-2">
-                <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
-                <span>Road status is updated dynamically as citizens report damage and authority engineers log resolutions.</span>
-              </div>
+        {/* ── Welcome Hero Section ── */}
+        <div className="bg-white border border-slate-200 rounded-[16px] p-6 sm:p-8 flex flex-col sm:flex-row justify-between sm:items-center gap-6 shadow-sm transition-all hover:shadow-md">
+          <div className="space-y-4 max-w-2xl">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="text-[10px] uppercase font-black tracking-widest bg-[#EFF6FF] text-[#3B82F6] px-3 py-1 rounded-full border border-[#3B82F6]/30 animate-in fade-in duration-250">
+                VIGILANCE CONSOLE
+              </span>
+              <span className="text-[9px] font-bold px-2.5 py-1 bg-[#EFF6FF] text-[#3B82F6] border border-[#3B82F6]/30 rounded-full flex items-center gap-1 animate-in fade-in duration-250">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#3B82F6] animate-pulse"></span>
+                <span>Live GIS Connection</span>
+              </span>
             </div>
-          )}
+            
+            <h1 className="text-2xl sm:text-3xl font-black text-[#1E3A5F] tracking-tight leading-tight">
+              Welcome to Road Sentry,{' '}
+              <span className="text-[#3B82F6] font-black">{currentUser?.name || 'Dinesh'}</span>
+            </h1>
+            
+            <p className="text-sm text-slate-550 leading-relaxed font-medium">
+              Monitor local contractors, check road relaying health, file defects, and query our AI companion to ensure transparent resource spending.
+            </p>
+          </div>
+
+          {/* Decorative Logo */}
+          <div className="hidden md:block shrink-0 animate-in fade-in duration-300">
+            <img src="/logo.png" alt="Road Sentry Logo" className="h-16 w-auto object-contain transition-all duration-200 hover:scale-[1.03]" />
+          </div>
+        </div>
+
+        {/* ── Feature Cards Section (3 Large Clickable Horizontal Cards) ── */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {featureCards.map((card, i) => {
+            const Icon = card.icon;
+            return (
+              <Link
+                key={i}
+                href={card.href}
+                className="bg-white border border-slate-200 hover:border-[#3B82F6]/50 rounded-[16px] p-5 flex items-center gap-4 group shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+              >
+                {/* Modern circular container */}
+                <div className="h-12 w-12 rounded-[12px] bg-slate-50 text-slate-900 group-hover:bg-[#1E3A5F] group-hover:text-[#3B82F6] flex items-center justify-center border border-slate-200 shrink-0 transition-colors duration-300 shadow-sm">
+                  <Icon className="h-5 w-5" />
+                </div>
+
+                {/* Info Text */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-black text-slate-800 group-hover:text-[#3B82F6] transition-colors duration-200">
+                    {card.label}
+                  </p>
+                  <p className="text-[11px] text-slate-450 mt-0.5 font-semibold">
+                    {card.desc}
+                  </p>
+                </div>
+
+                <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-[#3B82F6] group-hover:translate-x-0.5 transition-all shrink-0" />
+              </Link>
+            );
+          })}
         </div>
 
       </div>
-
     </div>
   );
 }

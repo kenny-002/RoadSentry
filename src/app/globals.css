@@ -1,33 +1,117 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --color-navy-950: #070d19;
-  --color-navy-900: #0b1528;
-  --color-navy-800: #13223f;
-  --color-navy-700: #1e293b;
-  --color-electric: #3b82f6;
-  --color-emerald-accent: #10b981;
+  /* Redefine navy backgrounds to pure white cards and panels with modern sky blue accents */
+  --color-navy-950: #FFFFFF; /* Pure White panel background */
+  --color-navy-900: #FFFFFF; /* Pure White panels */
+  --color-navy-850: #E5E7EB; /* Subtle borders */
+  --color-navy-800: #FFFFFF; /* Pure White background */
+  --color-navy-700: #F8FAFC; /* Soft slate/grey page background */
+  --color-navy-600: #64748B; /* Muted slate text */
+  --color-navy-500: #3B82F6; /* Accent Sky Blue */
+  --color-navy-400: #60A5FA;
+  --color-navy-300: #93C5FD;
+  --color-navy-200: #DBEAFE;
+  --color-navy-100: #EFF6FF; /* Soft sky blue hover background */
+  --color-navy-50: #F8FAFC;
+
+  /* Redefine slate backgrounds to soft slate and card bodies to white */
+  --color-slate-950: #111827; /* Deep slate headings */
+  --color-slate-900: #1F2937; /* Primary slate text */
+  --color-slate-800: #374151; /* Dark slate text secondary */
+  --color-slate-700: #475569; /* Intermediate slate text */
+  --color-slate-650: #4B5563; /* Sleek readable text for secondary labels */
+  --color-slate-600: #4B5563;
+  --color-slate-500: #64748B; /* Elegant secondary grey text */
+  --color-slate-400: #94A3B8; /* Muted slate */
+  --color-slate-300: #CBD5E1; /* Clear light slate */
+  --color-slate-200: #E5E7EB; /* Crisp borders */
+  --color-slate-100: #EFF6FF; /* Soft warm hover highlight background */
+  --color-slate-50: #F8FAFC;  /* Soft light-grey background */
+
+  /* Re-enable beautiful standard Tailwind blue shades mapped to Navy Blue (#1E3A5F) and Sky Blue (#3B82F6) */
+  --color-blue-950: #0D1B2E;
+  --color-blue-900: #1E3A5F; /* Professional Navy Blue primary brand color */
+  --color-blue-800: #1E3A5F;
+  --color-blue-700: #152A47; /* Navy Blue hover */
+  --color-blue-600: #1E3A5F; /* Primary button background */
+  --color-blue-500: #1E3A5F;
+  --color-blue-400: #3B82F6; /* Modern Sky Blue Accent */
+  --color-blue-300: #60A5FA;
+  --color-blue-200: #EFF6FF; /* Soft blue hover highlights */
+  --color-blue-100: #DBEAFE;
+  --color-blue-50: #F8FAFC;
+
+  --color-emerald-50: #F0FDF4;
+  --color-emerald-100: #DCFCE7;
+  --color-emerald-200: #BBF7D0;
+  --color-emerald-250: #BBF7D0;
+  --color-emerald-300: #86EFAC;
+  --color-emerald-400: #4ADE80;
+  --color-emerald-500: #22C55E;
+  --color-emerald-600: #16A34A;
+  --color-emerald-700: #15803D;
+  --color-emerald-800: #166534;
+  --color-emerald-850: #166534;
+  --color-emerald-900: #14532D;
+  --color-emerald-950: #14532D;
+
+  --color-amber-50: #FEF3C7;
+  --color-amber-100: #FEF3C7;
+  --color-amber-200: #FDE68A;
+  --color-amber-250: #FDE68A;
+  --color-amber-300: #FCD34D;
+  --color-amber-400: #FBBF24;
+  --color-amber-500: #F59E0B;
+  --color-amber-600: #D97706;
+  --color-amber-700: #B45309;
+  --color-amber-800: #92400E;
+  --color-amber-850: #92400E;
+  --color-amber-900: #78350F;
+  --color-amber-950: #78350F;
+
+  --color-red-50: #FEF2F2;
+  --color-red-100: #FEE2E2;
+  --color-red-200: #FECACA;
+  --color-red-250: #FECACA;
+  --color-red-300: #FCA5A5;
+  --color-red-400: #F87171;
+  --color-red-500: #EF4444; /* Keep standard Red for actual critical alerts */
+  --color-red-600: #DC2626;
+  --color-red-700: #B91C1C;
+  --color-red-800: #991B1B;
+  --color-red-850: #991B1B;
+  --color-red-900: #7F1D1D;
+  --color-red-950: #7F1D1D;
+  --color-red-550: #DC2626;
+
+  --color-electric: #1E3A5F; /* Navy Blue main accents */
+  --color-emerald-accent: #22C55E;
 }
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card-bg: rgba(255, 255, 255, 0.7);
-  --card-border: rgba(15, 23, 42, 0.06);
-  --card-blur: 16px;
-  --shadow-color: rgba(15, 23, 42, 0.04);
-  --grid-line: rgba(15, 23, 42, 0.03);
+  --background: #F8FAFC;   /* Premium Background */
+  --foreground: #111827;   /* Slate Black headings & body text */
+  --card-bg: #FFFFFF;      /* Surface/Card Color: Pure White */
+  --card-border: #E5E7EB;  /* Subtle grey border color */
+  --card-blur: 12px;
+  --shadow-color: rgba(30, 58, 95, 0.02); /* Soft subtle shadows */
+  --grid-line: rgba(30, 58, 95, 0.015);
 }
 
 .dark {
-  --background: #070d19;
-  --foreground: #f8fafc;
-  --card-bg: rgba(11, 21, 40, 0.6);
-  --card-border: rgba(255, 255, 255, 0.05);
-  --card-blur: 16px;
-  --shadow-color: rgba(0, 0, 0, 0.35);
-  --grid-line: rgba(255, 255, 255, 0.02);
+  /* Enforce identical light theme across both modes to comply strictly with user specification */
+  --background: #F8FAFC;
+  --foreground: #111827;
+  --card-bg: #FFFFFF;
+  --card-border: #E5E7EB;
+  --card-blur: 12px;
+  --shadow-color: rgba(30, 58, 95, 0.02);
+  --grid-line: rgba(30, 58, 95, 0.015);
 }
+
 
 body {
   background-color: var(--background);
@@ -37,31 +121,29 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* Glassmorphism Panel */
+/* Elevated Appearance with Soft Shadows instead of harsh borders */
 .glass-panel {
   background: var(--card-bg);
-  backdrop-filter: blur(var(--card-blur));
-  -webkit-backdrop-filter: blur(var(--card-blur));
   border: 1px solid var(--card-border);
-  box-shadow: 0 8px 32px 0 var(--shadow-color);
+  box-shadow: 0 4px 20px -2px var(--shadow-color), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
   border-radius: 1rem;
 }
 
 /* Glowing overlays for different card statuses */
 .glow-blue {
-  box-shadow: 0 0 25px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 25px rgba(37, 99, 235, 0.05);
 }
 
 .glow-emerald {
-  box-shadow: 0 0 25px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.03);
 }
 
 .glow-rose {
-  box-shadow: 0 0 25px rgba(244, 63, 94, 0.1);
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.03);
 }
 
 .glow-amber {
-  box-shadow: 0 0 25px rgba(245, 158, 11, 0.15);
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.03);
 }
 
 /* Futuristic grids and radial backgrounds */
@@ -74,16 +156,16 @@ body {
 
 .gradient-radial-glow {
   background: 
-    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.08) 0px, transparent 50%), 
-    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%), 
-    radial-gradient(at 50% 100%, rgba(59, 130, 246, 0.05) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.02) 0px, transparent 50%), 
+    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.01) 0px, transparent 50%), 
+    radial-gradient(at 50% 100%, rgba(37, 99, 235, 0.01) 0px, transparent 50%);
 }
 
 .dark .gradient-radial-glow {
   background: 
-    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.12) 0px, transparent 50%), 
-    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%), 
-    radial-gradient(at 50% 100%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.02) 0px, transparent 50%), 
+    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.01) 0px, transparent 50%), 
+    radial-gradient(at 50% 100%, rgba(37, 99, 235, 0.01) 0px, transparent 50%);
 }
 
 /* Hide scrollbars for sliders but keep scrollability */

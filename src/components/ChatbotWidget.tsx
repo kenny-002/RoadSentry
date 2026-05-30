@@ -21,10 +21,10 @@ export default function ChatbotWidget() {
 
   // Translations for welcome greetings
   const greetings = {
-    en: "Hello! I am RoadWatch Assistant. Ask me about road contractor responsibilities, relaying timelines, or how to report an issue.",
-    ta: "வணக்கம்! நான் ரோடுவாட்ச் உதவி மையம். சாலை ஒப்பந்ததாரர் பொறுப்புகள், பழுதுபார்த்தல் காலக்கெடு, அல்லது புகார் அளிப்பது எப்படி என்று என்னிடம் கேளுங்கள்.",
-    hi: "नमस्ते! मैं रोडवॉच सहायक हूँ। मुझसे सड़क ठेकेदार की जिम्मेदारियों, मरम्मत की समयसीमा, या शिकायत दर्ज करने के बारे में पूछें।",
-    es: "¡Hola! Soy el Asistente de RoadWatch. Pregúntame sobre contratistas o cómo reportar un problema."
+    en: "Hello! I am Road Sentry Assistant. Ask me about road contractor responsibilities, relaying timelines, or how to report an issue.",
+    ta: "வணக்கம்! நான் ரோடு சென்ட்ரி உதவி மையம். சாலை ஒப்பந்ததாரர் பொறுப்புகள், பழுதுபார்த்தல் காலக்கெடு, அல்லது புகார் அளிப்பது எப்படி என்று என்னிடம் கேளுங்கள்.",
+    hi: "नमस्ते! मैं रोड सेंट्री सहायक हूँ। मुझसे सड़क ठेकेदार की जिम्मेदारियों, मरम्मत की समयसीमा, या शिकायत दर्ज करने के बारे में पूछें।",
+    es: "¡Hola! Soy el Asistente de Road Sentry. Pregúntame sobre contratistas o cómo reportar un problema."
   };
 
   useEffect(() => {
@@ -154,31 +154,31 @@ export default function ChatbotWidget() {
   ];
 
   return (
-    <div className="glass-panel p-4 bg-opacity-65 dark:bg-opacity-25 border border-card-border shadow-xl h-[550px] flex flex-col w-full">
+    <div className="glass-panel p-4 bg-white border border-[#E5E7EB] shadow-xl h-[550px] flex flex-col w-full">
       {/* Bot Header */}
-      <div className="flex items-center justify-between pb-3.5 border-b border-slate-200 dark:border-navy-800/80 mb-3">
+      <div className="flex items-center justify-between pb-3.5 border-b border-slate-200 mb-3">
         <div className="flex items-center space-x-2.5">
-          <div className="p-2 bg-blue-600/10 text-blue-500 rounded-lg border border-blue-500/20 glow-blue">
+          <div className="p-2 bg-[#3B82F6]/15 text-[#3B82F6] rounded-lg border border-[#3B82F6]/30">
             <Bot className="h-5 w-5 animate-bounce" />
           </div>
           <div>
-            <h3 className="font-extrabold text-sm text-slate-800 dark:text-white flex items-center gap-1.5">
-              <span>RoadWatch AI Assistant</span>
-              <Sparkles className="h-3.5 w-3.5 text-yellow-400" />
+            <h3 className="font-extrabold text-sm text-[#1E3A5F] flex items-center gap-1.5">
+              <span>Road Sentry AI Assistant</span>
+              <Sparkles className="h-3.5 w-3.5 text-[#3B82F6]" />
             </h3>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Smart City Agent</p>
+            <p className="text-[10px] text-slate-550 font-semibold uppercase">Smart City Agent</p>
           </div>
         </div>
 
         {/* Action controls */}
         <div className="flex items-center space-x-2">
           {/* Language selector */}
-          <div className="flex items-center space-x-1 text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-navy-950 px-2 py-1 rounded border border-slate-200 dark:border-navy-850">
-            <Globe className="h-3.5 w-3.5" />
+          <div className="flex items-center space-x-1 text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-200">
+            <Globe className="h-3.5 w-3.5 text-[#3B82F6]" />
             <select
               value={lang}
               onChange={(e) => setLang(e.target.value as any)}
-              className="bg-transparent border-none text-[10px] font-bold outline-none text-slate-600 dark:text-slate-300 focus:ring-0"
+              className="bg-transparent border-none text-[10px] font-bold outline-none text-slate-600 focus:ring-0"
             >
               <option value="en">English (EN)</option>
               <option value="ta">தமிழ் (TA)</option>
@@ -190,7 +190,7 @@ export default function ChatbotWidget() {
       </div>
 
       {/* Message Scroll View */}
-      <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-1 p-2 bg-slate-950/5 dark:bg-slate-950/20 rounded-xl border border-slate-200/50 dark:border-navy-900/50 mb-3">
+      <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-1 p-2 bg-[#F8FAFC] rounded-xl border border-slate-200 mb-3">
         {messages.map((msg) => (
           <div 
             key={msg.id}
@@ -201,8 +201,8 @@ export default function ChatbotWidget() {
             {/* Sender Icon */}
             <div className={`h-8 w-8 rounded-lg flex items-center justify-center border shrink-0 text-xs ${
               msg.sender === 'user' 
-                ? 'bg-blue-600 border-blue-500 text-white shadow' 
-                : 'bg-slate-100 dark:bg-navy-900 border-slate-200 dark:border-navy-850 text-slate-500 dark:text-slate-400'
+                ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white shadow' 
+                : 'bg-white border-[#E5E7EB] text-[#3B82F6]'
             }`}>
               {msg.sender === 'user' ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
             </div>
@@ -210,11 +210,11 @@ export default function ChatbotWidget() {
             {/* Bubble */}
             <div className={`p-3 rounded-xl border text-xs leading-relaxed font-medium ${
               msg.sender === 'user'
-                ? 'bg-blue-600/10 border-blue-500/20 text-blue-700 dark:text-blue-300 rounded-tr-none'
-                : 'bg-white dark:bg-navy-900/80 border-slate-200 dark:border-navy-850 text-slate-700 dark:text-slate-200 rounded-tl-none shadow-sm'
+                ? 'bg-[#EFF6FF] border-[#3B82F6]/30 text-[#1E3A5F] rounded-tr-none shadow-sm'
+                : 'bg-white border-[#E5E7EB] text-[#111827] rounded-tl-none shadow-sm'
             }`}>
               <p className="whitespace-pre-line">{msg.text}</p>
-              <span className="block text-[8px] text-slate-400 dark:text-slate-500 text-right mt-1.5 font-semibold">
+              <span className="block text-[8px] text-slate-400 text-right mt-1.5 font-semibold">
                 {msg.timestamp}
               </span>
             </div>
@@ -229,7 +229,7 @@ export default function ChatbotWidget() {
           <button
             key={idx}
             onClick={() => handleSend(q)}
-            className="px-2.5 py-1 bg-slate-100 dark:bg-navy-900 hover:bg-blue-600/10 hover:text-blue-500 hover:border-blue-500/20 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-navy-850 rounded-full transition-all active:scale-95 cursor-pointer"
+            className="px-2.5 py-1 bg-slate-50 hover:bg-[#3B82F6]/10 hover:text-[#1E3A5F] hover:border-[#3B82F6]/20 text-slate-650 border border-slate-250 rounded-full transition-all active:scale-95 cursor-pointer"
           >
             {q}
           </button>
@@ -244,8 +244,8 @@ export default function ChatbotWidget() {
           disabled={isListening}
           className={`p-3 border rounded-xl flex items-center justify-center transition-all ${
             isListening 
-              ? 'bg-red-500/15 text-red-500 border-red-500/30 animate-pulse glow-rose' 
-              : 'bg-slate-100 dark:bg-navy-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-navy-800 hover:bg-slate-200'
+              ? 'bg-red-500/15 text-red-500 border-red-500/30 animate-pulse' 
+              : 'bg-slate-550/5 text-slate-500 border-slate-200 hover:bg-slate-100'
           }`}
           title="Mic listening simulator"
         >
@@ -259,13 +259,13 @@ export default function ChatbotWidget() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
           placeholder={isListening ? "Listening speaking voice..." : "Ask: 'Who is responsible for Anna Salai?'"}
-          className="flex-1 px-4 py-3 border border-slate-200 dark:border-navy-800 bg-white/70 dark:bg-navy-950/70 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+          className="flex-1 px-4 py-3 border border-slate-200 bg-white rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] text-slate-800"
         />
 
         {/* Send Action */}
         <button
           onClick={() => handleSend(input)}
-          className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl flex items-center justify-center transition-all shadow hover:shadow-lg active:scale-95"
+          className="p-3 bg-[#1E3A5F] hover:bg-[#152A47] text-white rounded-xl flex items-center justify-center transition-all shadow hover:shadow-lg active:scale-95 cursor-pointer"
         >
           <Send className="h-4.5 w-4.5" />
         </button>

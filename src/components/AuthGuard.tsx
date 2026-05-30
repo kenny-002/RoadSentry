@@ -42,7 +42,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       <div className="flex-1 min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans">
         <div className="relative flex flex-col items-center gap-4 p-8 glass-panel border border-card-border bg-white/50 dark:bg-slate-900/40 glow-blue">
           <div className="relative">
-            <Loader2 className="h-12 w-12 text-blue-500 animate-spin" />
+            <Loader2 className="h-12 w-12 text-slate-500 animate-spin" />
             <ShieldCheck className="h-6 w-6 text-emerald-400 absolute top-3 left-3 animate-pulse" />
           </div>
           <div className="text-center">
@@ -63,7 +63,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   if (isUnauthorized) {
     return (
       <div className="flex-1 min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans">
-        <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+        <Loader2 className="h-8 w-8 text-slate-500 animate-spin" />
       </div>
     );
   }

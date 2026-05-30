@@ -24,19 +24,14 @@ export default function UploadBox({ onFileSelect, selectedFileUrl, onClear }: Up
     }
   };
 
-  const simulateUpload = (fileName: string) => {
+  const simulateUpload = (file: File) => {
     setIsUploading(true);
     // Simulate a network upload delay
     setTimeout(() => {
       setIsUploading(false);
-      // Give a beautiful mock image from Unsplash depending on random factor or type
-      const mockImages = [
-        'https://images.unsplash.com/photo-1515162305285-0293e4767cc2?q=80&w=800&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1584467541268-b040f83be3fd?q=80&w=800&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1596464716127-f2a82984de30?q=80&w=800&auto=format&fit=crop'
-      ];
-      const selectedImage = mockImages[Math.floor(Math.random() * mockImages.length)];
-      onFileSelect(selectedImage);
+      // Create a local object URL to render the user's actual uploaded file!
+      const objectUrl = URL.createObjectURL(file);
+      onFileSelect(objectUrl);
     }, 1500);
   };
 
@@ -47,7 +42,7 @@ export default function UploadBox({ onFileSelect, selectedFileUrl, onClear }: Up
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
-      simulateUpload(file.name);
+      simulateUpload(file);
     }
   };
 
@@ -55,7 +50,7 @@ export default function UploadBox({ onFileSelect, selectedFileUrl, onClear }: Up
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      simulateUpload(file.name);
+      simulateUpload(file);
     }
   };
 

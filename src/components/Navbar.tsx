@@ -59,18 +59,17 @@ export default function Navbar() {
   }, [userRole]);
 
   return (
-    <nav className="sticky top-0 z-50 w-full glass-panel border-x-0 border-t-0 rounded-none bg-opacity-70 dark:bg-opacity-50 border-b border-card-border backdrop-blur-md">
+    <nav className="sticky top-0 z-50 w-full bg-white border-b border-[#E5E7EB] shadow-sm backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="p-2 bg-gradient-to-tr from-blue-600 to-emerald-500 rounded-lg text-white font-bold flex items-center justify-center glow-blue">
-                <ShieldAlert className="h-5 w-5" />
-              </div>
-              <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-blue-600 via-blue-500 to-emerald-500 bg-clip-text text-transparent">
-                RoadWatch
-              </span>
+            <Link href="/" className="flex items-center h-15">
+              <img
+                src="/logo_cropped.png"
+                alt="Road Sentry"
+                className="h-14 sm:h-15 w-[160px] sm:w-[190px] object-contain transition-opacity hover:opacity-90"
+              />
             </Link>
           </div>
 
@@ -83,13 +82,13 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold transition-all border ${
                     isActive
-                      ? 'bg-blue-600/10 text-blue-500 dark:text-blue-400 font-semibold'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-navy-800 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-[#3B82F6]/10 text-[#1E3A5F] border-[#3B82F6]/25 font-bold shadow-sm'
+                      : 'text-slate-655 hover:bg-slate-50 hover:text-[#1E3A5F] border-transparent'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-4 w-4" style={{ color: isActive ? '#3B82F6' : undefined }} />
                   <span>{link.name}</span>
                 </Link>
               );
@@ -101,10 +100,10 @@ export default function Navbar() {
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-navy-800 transition-colors cursor-pointer"
+              className="p-2 rounded-lg text-slate-550 hover:bg-slate-100 transition-colors cursor-pointer"
               title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
-              {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5" />}
+              {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-500" /> : <Moon className="h-5 w-5" />}
             </button>
             
             {/* Session CTA */}
@@ -112,13 +111,13 @@ export default function Navbar() {
               <div className="flex items-center space-x-2">
                 {/* Active Role Badge */}
                 {userRole === 'admin' ? (
-                  <div className="flex items-center space-x-1 px-2.5 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-xs font-bold">
-                    <Shield className="h-3.5 w-3.5" />
+                  <div className="flex items-center space-x-1 px-2.5 py-1 bg-[#1E3A5F] border border-[#1E3A5F]/20 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm animate-in fade-in duration-200">
+                    <Shield className="h-3 w-3 text-[#3B82F6]" />
                     <span>Admin</span>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-1 px-2.5 py-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-full text-xs font-bold">
-                    <User className="h-3.5 w-3.5" />
+                  <div className="flex items-center space-x-1 px-2.5 py-1 bg-[#EFF6FF] text-[#3B82F6] border border-[#3B82F6]/25 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm animate-in fade-in duration-200">
+                    <User className="h-3 w-3" />
                     <span>Citizen</span>
                   </div>
                 )}
@@ -130,10 +129,10 @@ export default function Navbar() {
                     logout();
                     window.location.href = `/login?switch=${nextRole}`;
                   }}
-                  className="px-3.5 py-2 bg-slate-100 dark:bg-navy-800 hover:bg-slate-200 dark:hover:bg-navy-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 rounded-lg text-xs font-semibold transition-all active:scale-95 flex items-center space-x-1.5 cursor-pointer"
+                  className="px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-[#1E3A5F] border border-[#E5E7EB] rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center space-x-1.5 cursor-pointer shadow-sm"
                   title="Switch profile role"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <RefreshCw className="h-3.5 w-3.5 text-[#3B82F6]" />
                   <span>Switch Account</span>
                 </button>
 
@@ -154,7 +153,7 @@ export default function Navbar() {
                 href="/login"
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center space-x-1.5"
               >
-                <LogIn className="h-4 w-4" />
+                <LogIn className="h-4 w-4 text-white" />
                 <span>Sign In</span>
               </Link>
             )}
@@ -192,30 +191,30 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsOpen(false)}
-                className={`flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-medium transition-all ${
+                className={`flex items-center space-x-3 px-3 py-3 rounded-lg text-base font-semibold transition-all border ${
                   isActive
-                    ? 'bg-blue-600/10 text-blue-500 dark:text-blue-400 font-semibold'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-navy-800 hover:text-slate-900 dark:hover:text-white'
+                    ? 'bg-[#3B82F6]/10 text-[#1E3A5F] border-[#3B82F6]/25 font-bold shadow-sm'
+                    : 'text-slate-655 hover:bg-slate-50 hover:text-[#1E3A5F] border-transparent'
                 }`}
               >
-                <Icon className="h-5 w-5" />
+                <Icon className="h-5 w-5" style={{ color: isActive ? '#3B82F6' : undefined }} />
                 <span>{link.name}</span>
               </Link>
             );
           })}
           
           {userRole !== null ? (
-            <div className="pt-4 pb-2 px-3 border-t border-slate-200 dark:border-navy-800 space-y-3">
+            <div className="pt-4 pb-2 px-3 border-t border-slate-200 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">Signed in as:</span>
+                <span className="text-xs font-semibold text-slate-400">Signed in as:</span>
                 {userRole === 'admin' ? (
-                  <div className="flex items-center space-x-1 px-2.5 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-xs font-bold">
-                    <Shield className="h-3.5 w-3.5" />
+                  <div className="flex items-center space-x-1 px-2.5 py-1 bg-[#1E3A5F] border border-[#1E3A5F]/20 text-white rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm animate-in fade-in duration-200">
+                    <Shield className="h-3 w-3 text-[#3B82F6]" />
                     <span>Admin</span>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-1 px-2.5 py-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-full text-xs font-bold">
-                    <User className="h-3.5 w-3.5" />
+                  <div className="flex items-center space-x-1 px-2.5 py-1 bg-[#EFF6FF] text-[#3B82F6] border border-[#3B82F6]/25 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm animate-in fade-in duration-200">
+                    <User className="h-3 w-3" />
                     <span>Citizen</span>
                   </div>
                 )}
@@ -227,9 +226,9 @@ export default function Navbar() {
                   logout();
                   window.location.href = `/login?switch=${nextRole}`;
                 }}
-                className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 rounded-lg text-sm font-semibold transition-all active:scale-95 cursor-pointer"
+                className="w-full flex items-center justify-center space-x-2 px-4 py-2.5 bg-slate-55/5 text-[#1E3A5F] border border-[#E5E7EB] rounded-lg text-sm font-bold transition-all active:scale-95 cursor-pointer shadow-sm animate-in fade-in duration-200"
               >
-                <RefreshCw className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4 text-[#3B82F6]" />
                 <span>Switch Account</span>
               </button>
               <button
@@ -251,7 +250,7 @@ export default function Navbar() {
                 onClick={() => setIsOpen(false)}
                 className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg text-base font-semibold shadow-md hover:shadow-lg active:scale-95"
               >
-                <LogIn className="h-5 w-5" />
+                <LogIn className="h-5 w-5 text-white" />
                 <span>Sign In</span>
               </Link>
             </div>

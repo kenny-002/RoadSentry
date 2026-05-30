@@ -9,7 +9,7 @@ export default function ContractorScoreCard() {
 
   const getPerformanceBadge = (score: number) => {
     if (score >= 90) return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 tag-premier';
-    if (score >= 75) return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 tag-standard';
+    if (score >= 75) return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20 tag-standard';
     if (score >= 60) return 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20 tag-warning';
     return 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20 animate-pulse tag-watchlist';
   };
@@ -79,7 +79,7 @@ export default function ContractorScoreCard() {
               <div className="flex items-center gap-1.5 border-l border-slate-200 dark:border-navy-800 pl-4">
                 <div>
                   <p className="text-[9px] text-slate-400 uppercase font-bold">Audit Score</p>
-                  <p className="text-base font-black text-blue-600 dark:text-blue-400">{contractor.score}%</p>
+                  <p className="text-base font-black text-slate-600 dark:text-slate-400">{contractor.score}%</p>
                 </div>
               </div>
             </div>
