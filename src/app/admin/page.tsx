@@ -3,7 +3,6 @@
 import React from 'react';
 import { useAppState } from '../../context/StateContext';
 import Link from 'next/link';
-import AnalyticsCards from '../../components/AnalyticsCards';
 import {
   ShieldAlert, RefreshCw, UserCheck, ShieldCheck, Lightbulb,
   ArrowRight, Users, TrendingUp, AlertTriangle, CheckCircle2, Clock, Activity
@@ -111,9 +110,6 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-
-      {/* Analytics Cards */}
-      <AnalyticsCards />
 
       {/* Quick Stats Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
