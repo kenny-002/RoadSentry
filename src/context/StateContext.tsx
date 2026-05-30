@@ -40,6 +40,15 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isLoaded, setIsLoaded] = useState(false);
   const [authLoaded, setAuthLoaded] = useState(false);
 
+  // Hard failsafe: if authLoaded is never set (e.g. localStorage blocked on mobile),
+  // force it true after 1.5 seconds so the app never stays stuck on the loading screen
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setAuthLoaded(true);
+    }, 1500);
+    return () => clearTimeout(timeout);
+  }, []);
+
   const addRoad = (roadData: Omit<Road, 'id' | 'svgPath' | 'textCoords'>) => {
     const nextIdNumber = roads.length > 0
       ? Math.max(...roads.map(r => {
@@ -69,48 +78,52 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Load from localStorage on mount
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        const storedRoads = localStorage.getItem('roadwatch_roads');
-        const storedComplaints = localStorage.getItem('roadwatch_complaints');
-        const storedDraft = localStorage.getItem('roadwatch_draft');
-        const storedRole = localStorage.getItem('roadwatch_user_role') as 'admin' | 'user' | null;
-        const storedUser = localStorage.getItem('roadwatch_current_user');
+    const run = async () => {
+      try {
+        if (typeof window !== 'undefined') {
+          const storedRoads = localStorage.getItem('roadwatch_roads');
+          const storedComplaints = localStorage.getItem('roadwatch_complaints');
+          const storedDraft = localStorage.getItem('roadwatch_draft');
+          const storedRole = localStorage.getItem('roadwatch_user_role') as 'admin' | 'user' | null;
+          const storedUser = localStorage.getItem('roadwatch_current_user');
 
-        if (storedRoads) {
-          try {
-            const parsed = JSON.parse(storedRoads) as Road[];
-            const healed = parsed.map(pr => {
-              const initial = initialRoads.find(ir => ir.id === pr.id);
-              return {
-                ...pr,
-                coordinates: pr.coordinates || (initial ? initial.coordinates : [])
-              };
-            });
-            setRoads(healed);
-          } catch (e) {
-            console.error(e);
+          if (storedRoads) {
+            try {
+              const parsed = JSON.parse(storedRoads) as Road[];
+              const healed = parsed.map(pr => {
+                const initial = initialRoads.find(ir => ir.id === pr.id);
+                return {
+                  ...pr,
+                  coordinates: pr.coordinates || (initial ? initial.coordinates : [])
+                };
+              });
+              setRoads(healed);
+            } catch (e) {
+              console.error(e);
+            }
           }
+          if (storedComplaints) {
+            try { setComplaints(JSON.parse(storedComplaints)); } catch (e) { console.error(e); }
+          }
+          if (storedDraft) {
+            try { setDraftComplaint(JSON.parse(storedDraft)); } catch (e) { console.error(e); }
+          }
+          if (storedRole === 'admin' || storedRole === 'user') {
+            setUserRole(storedRole);
+          }
+          if (storedUser) {
+            try { setCurrentUser(JSON.parse(storedUser)); } catch (e) { console.error(e); }
+          }
+          setIsLoaded(true);
         }
-        if (storedComplaints) {
-          try { setComplaints(JSON.parse(storedComplaints)); } catch (e) { console.error(e); }
-        }
-        if (storedDraft) {
-          try { setDraftComplaint(JSON.parse(storedDraft)); } catch (e) { console.error(e); }
-        }
-        if (storedRole === 'admin' || storedRole === 'user') {
-          setUserRole(storedRole);
-        }
-        if (storedUser) {
-          try { setCurrentUser(JSON.parse(storedUser)); } catch (e) { console.error(e); }
-        }
-        setIsLoaded(true);
+      } catch (err) {
+        console.warn('localStorage read failed or blocked:', err);
+      } finally {
+        // Mark auth as loaded — the safety timeout useEffect above acts as a second guarantee
+        setAuthLoaded(true);
       }
-    } catch (err) {
-      console.warn('localStorage read failed or blocked:', err);
-    } finally {
-      setAuthLoaded(true);
-    }
+    };
+    run();
   }, []);
 
   const login = (role: 'admin' | 'user', profile?: UserProfile) => {
