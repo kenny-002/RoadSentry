@@ -52,7 +52,6 @@ export default function UploadBox({ onFileSelect, selectedFileUrl, onClear }: Up
       {selectedFileUrl ? (
         /* ── Preview ── */
         <div className="relative rounded-2xl border border-slate-200 dark:border-navy-700 overflow-hidden group aspect-[16/9] max-h-64 w-full flex items-center justify-center bg-slate-900">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={selectedFileUrl} alt="Uploaded issue proof" className="w-full h-full object-cover" />
 
           {/* Desktop hover overlay */}

@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
+const isCI = !!process.env.NETLIFY || !!process.env.VERCEL || !!process.env.CI;
+
 const nextConfig: NextConfig = {
-  distDir: ".next.nosync",
+  distDir: isCI ? undefined : ".next.nosync",
   allowedDevOrigins: [
     "172.20.47.129",
     "172.20.47.129:3000",

@@ -111,7 +111,6 @@ export default function AllComplaintsPage() {
                       <td className="py-4 px-3">
                         {c.imageUrl ? (
                           <div onClick={() => setActivePhotoUrl(c.imageUrl)} className="relative group h-12 w-16 overflow-hidden rounded-lg border border-slate-200 dark:border-navy-700 cursor-pointer hover:scale-105 transition-transform">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={c.imageUrl} alt="report" className="h-full w-full object-cover" />
                             <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <Eye className="h-4 w-4 text-white" />
@@ -205,7 +204,6 @@ export default function AllComplaintsPage() {
         <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out" onClick={() => setActivePhotoUrl(null)}>
           <div className="relative max-w-4xl max-h-[85vh] bg-white dark:bg-slate-900 p-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
             <button onClick={() => setActivePhotoUrl(null)} className="absolute top-4 right-4 z-10 bg-slate-900/60 hover:bg-slate-900 text-white rounded-full p-2 transition-transform hover:scale-110">✕</button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={activePhotoUrl} alt="defect" className="max-w-full max-h-[75vh] object-contain rounded-lg" />
           </div>
         </div>
