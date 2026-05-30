@@ -201,7 +201,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   );
 
   return (
-    <div className="flex-1 min-h-screen flex flex-col relative bg-slate-50">
+    <div className="flex-1 flex flex-col min-h-screen relative bg-slate-50" suppressHydrationWarning>
       
       {/* ── Top Header Bar (Unified for PC & Mobile) ── */}
       <header 

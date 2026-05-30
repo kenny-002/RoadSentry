@@ -33,12 +33,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 transition-colors duration-300" suppressHydrationWarning>
-        <script
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{
-            __html: `(function(){localStorage.setItem('roadwatch_theme', 'light');document.documentElement.classList.remove('dark');})()`
-          }}
-        />
         <StateProvider>
           <MainLayout>
             <AuthGuard>{children}</AuthGuard>
