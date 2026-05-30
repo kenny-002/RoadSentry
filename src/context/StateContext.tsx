@@ -30,24 +30,32 @@ interface StateContextType {
 const StateContext = createContext<StateContextType | undefined>(undefined);
 
 export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Read auth state SYNCHRONOUSLY at init time so there is zero loading delay on any device
+  const [userRole, setUserRole] = useState<'admin' | 'user' | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const r = localStorage.getItem('roadwatch_user_role');
+      return r === 'admin' || r === 'user' ? r : null;
+    } catch { return null; }
+  });
+
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const u = localStorage.getItem('roadwatch_current_user');
+      return u ? JSON.parse(u) : null;
+    } catch { return null; }
+  });
+
+  // authLoaded is always true — auth is read synchronously above, no async wait needed
+  const authLoaded = true;
+
   const [roads, setRoads] = useState<Road[]>(initialRoads);
   const [contractors, setContractors] = useState<Contractor[]>(initialContractors);
   const [authorities] = useState<Authority[]>(initialAuthorities);
   const [complaints, setComplaints] = useState<Complaint[]>(initialComplaints);
   const [draftComplaint, setDraftComplaint] = useState<Partial<Complaint> | null>(null);
-  const [userRole, setUserRole] = useState<'admin' | 'user' | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [authLoaded, setAuthLoaded] = useState(false);
-
-  // Hard failsafe: if authLoaded is never set (e.g. localStorage blocked on mobile),
-  // force it true after 1.5 seconds so the app never stays stuck on the loading screen
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setAuthLoaded(true);
-    }, 1500);
-    return () => clearTimeout(timeout);
-  }, []);
 
   const addRoad = (roadData: Omit<Road, 'id' | 'svgPath' | 'textCoords'>) => {
     const nextIdNumber = roads.length > 0
@@ -76,54 +84,40 @@ export const StateProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
-  // Load from localStorage on mount
+  // Load remaining data from localStorage on mount (non-blocking)
   useEffect(() => {
-    const run = async () => {
-      try {
-        if (typeof window !== 'undefined') {
-          const storedRoads = localStorage.getItem('roadwatch_roads');
-          const storedComplaints = localStorage.getItem('roadwatch_complaints');
-          const storedDraft = localStorage.getItem('roadwatch_draft');
-          const storedRole = localStorage.getItem('roadwatch_user_role') as 'admin' | 'user' | null;
-          const storedUser = localStorage.getItem('roadwatch_current_user');
+    try {
+      if (typeof window !== 'undefined') {
+        const storedRoads = localStorage.getItem('roadwatch_roads');
+        const storedComplaints = localStorage.getItem('roadwatch_complaints');
+        const storedDraft = localStorage.getItem('roadwatch_draft');
 
-          if (storedRoads) {
-            try {
-              const parsed = JSON.parse(storedRoads) as Road[];
-              const healed = parsed.map(pr => {
-                const initial = initialRoads.find(ir => ir.id === pr.id);
-                return {
-                  ...pr,
-                  coordinates: pr.coordinates || (initial ? initial.coordinates : [])
-                };
-              });
-              setRoads(healed);
-            } catch (e) {
-              console.error(e);
-            }
+        if (storedRoads) {
+          try {
+            const parsed = JSON.parse(storedRoads) as Road[];
+            const healed = parsed.map(pr => {
+              const initial = initialRoads.find(ir => ir.id === pr.id);
+              return {
+                ...pr,
+                coordinates: pr.coordinates || (initial ? initial.coordinates : [])
+              };
+            });
+            setRoads(healed);
+          } catch (e) {
+            console.error(e);
           }
-          if (storedComplaints) {
-            try { setComplaints(JSON.parse(storedComplaints)); } catch (e) { console.error(e); }
-          }
-          if (storedDraft) {
-            try { setDraftComplaint(JSON.parse(storedDraft)); } catch (e) { console.error(e); }
-          }
-          if (storedRole === 'admin' || storedRole === 'user') {
-            setUserRole(storedRole);
-          }
-          if (storedUser) {
-            try { setCurrentUser(JSON.parse(storedUser)); } catch (e) { console.error(e); }
-          }
-          setIsLoaded(true);
         }
-      } catch (err) {
-        console.warn('localStorage read failed or blocked:', err);
-      } finally {
-        // Mark auth as loaded — the safety timeout useEffect above acts as a second guarantee
-        setAuthLoaded(true);
+        if (storedComplaints) {
+          try { setComplaints(JSON.parse(storedComplaints)); } catch (e) { console.error(e); }
+        }
+        if (storedDraft) {
+          try { setDraftComplaint(JSON.parse(storedDraft)); } catch (e) { console.error(e); }
+        }
+        setIsLoaded(true);
       }
-    };
-    run();
+    } catch (err) {
+      console.warn('localStorage read failed or blocked:', err);
+    }
   }, []);
 
   const login = (role: 'admin' | 'user', profile?: UserProfile) => {
