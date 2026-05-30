@@ -252,11 +252,11 @@ function LocateMeButton({ onLocate, onError }: { onLocate: (coords: { lat: numbe
       type="button"
       onClick={handleClick}
       disabled={isLocating}
-      className="absolute bottom-6 left-6 z-[1000] bg-white/95 dark:bg-slate-950/90 text-slate-700 dark:text-slate-100 hover:text-slate-600 dark:hover:text-slate-400 disabled:opacity-50 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl flex items-center gap-1.5 backdrop-blur-md active:scale-95 transition-all text-xs font-bold"
+      className="absolute bottom-8 right-2 z-[1000] bg-white/95 dark:bg-slate-950/90 text-slate-700 dark:text-slate-100 hover:text-slate-600 dark:hover:text-slate-400 disabled:opacity-50 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xl flex items-center gap-1.5 backdrop-blur-md active:scale-95 transition-all text-xs font-bold"
       style={{ pointerEvents: 'auto' }}
     >
-      <Compass className="h-4.5 w-4.5 text-emerald-400 animate-spin" style={{ animationDuration: isLocating ? '1s' : '8s' }} />
-      <span>{isLocating ? 'Locating Live GPS...' : 'Locate My Area'}</span>
+      <Compass className="h-4 w-4 text-emerald-400 animate-spin" style={{ animationDuration: isLocating ? '1s' : '8s' }} />
+      <span className="hidden sm:inline">{isLocating ? 'Locating...' : 'Get GPS'}</span>
     </button>
   );
 }
@@ -443,25 +443,22 @@ function MapClickHandler({ onClick }: { onClick: (coords: { lat: number; lng: nu
 
 function MapTypeControl({ mapType, setMapType }: { mapType: 'roadmap' | 'satellite'; setMapType: (type: 'roadmap' | 'satellite') => void }) {
   return (
-    <div className="absolute bottom-8 right-4 z-[1000] bg-white/95 dark:bg-slate-950/95 rounded-xl p-1 border border-slate-200 dark:border-slate-800 shadow-2xl flex gap-1 backdrop-blur-md">
+    // Bottom-LEFT to avoid overlapping Leaflet attribution (bottom-right) and other controls
+    <div className="absolute bottom-8 left-2 z-[1000] bg-white/95 dark:bg-slate-950/95 rounded-xl p-1 border border-slate-200 dark:border-slate-800 shadow-2xl flex gap-1 backdrop-blur-md">
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
           setMapType('roadmap');
         }}
-        className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
+        className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
           mapType === 'roadmap'
-            ? 'text-white shadow-md animate-none'
-            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-250'
+            ? 'text-white shadow-md'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
         }`}
-        style={
-          mapType === 'roadmap'
-            ? { backgroundColor: '#4b5563', color: '#ffffff' }
-            : undefined
-        }
+        style={mapType === 'roadmap' ? { backgroundColor: '#4b5563', color: '#ffffff' } : undefined}
       >
-        GMaps Light
+        🗺 Map
       </button>
       <button
         type="button"
@@ -469,18 +466,14 @@ function MapTypeControl({ mapType, setMapType }: { mapType: 'roadmap' | 'satelli
           e.stopPropagation();
           setMapType('satellite');
         }}
-        className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
+        className={`px-2 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all ${
           mapType === 'satellite'
-            ? 'text-white shadow-md animate-none'
-            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-250'
+            ? 'text-white shadow-md'
+            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
         }`}
-        style={
-          mapType === 'satellite'
-            ? { backgroundColor: '#4b5563', color: '#ffffff' }
-            : undefined
-        }
+        style={mapType === 'satellite' ? { backgroundColor: '#4b5563', color: '#ffffff' } : undefined}
       >
-        GMaps Satellite
+        🛰 Satellite
       </button>
     </div>
   );
@@ -531,15 +524,16 @@ function CitySelectorControl({ selectedCity, onCitySelect }: { selectedCity: str
     : [];
 
   return (
-    <div className="absolute top-4 left-14 z-[1000] bg-white/95 dark:bg-slate-950/95 rounded-xl p-2 border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col gap-2 backdrop-blur-md">
+    // TOP-RIGHT corner — avoids Leaflet +/- zoom controls (top-left)
+    <div className="absolute top-2 right-2 z-[1000] bg-white/95 dark:bg-slate-950/95 rounded-xl p-2 border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col gap-2 backdrop-blur-md max-w-[180px]">
       {/* State Dropdown */}
-      <div className="flex items-center gap-1">
-        <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 w-14 text-right shrink-0">State:</span>
-        <div className="relative flex items-center bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-lg px-2 py-1">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500">State</span>
+        <div className="relative flex items-center bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-lg px-2 py-1.5">
           <select
             value={selectedState}
             onChange={handleStateChange}
-            className="bg-transparent text-slate-800 dark:text-slate-100 border-none focus:outline-none focus:ring-0 text-[10px] font-extrabold pr-4 cursor-pointer uppercase select-custom outline-none appearance-none"
+            className="bg-transparent text-slate-800 dark:text-slate-100 border-none focus:outline-none focus:ring-0 text-[10px] font-extrabold pr-4 cursor-pointer uppercase select-custom outline-none appearance-none w-full"
             style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
           >
             <option value="" className="bg-white dark:bg-navy-950 text-slate-400 font-bold">Select State...</option>
@@ -549,19 +543,19 @@ function CitySelectorControl({ selectedCity, onCitySelect }: { selectedCity: str
               </option>
             ))}
           </select>
-          <ChevronDown className="h-3 w-3 text-slate-450 dark:text-slate-400 absolute right-1.5 pointer-events-none" />
+          <ChevronDown className="h-3 w-3 text-slate-450 dark:text-slate-400 absolute right-1.5 pointer-events-none shrink-0" />
         </div>
       </div>
 
       {/* District Dropdown - shown after selecting state */}
       {selectedState && (
-        <div className="flex items-center gap-1">
-          <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 w-14 text-right shrink-0">District:</span>
-          <div className="relative flex items-center bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-lg px-2 py-1">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500">District</span>
+          <div className="relative flex items-center bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-lg px-2 py-1.5">
             <select
               value={selectedCity}
               onChange={handleDistrictChange}
-              className="bg-transparent text-slate-800 dark:text-slate-100 border-none focus:outline-none focus:ring-0 text-[10px] font-extrabold pr-4 cursor-pointer uppercase select-custom outline-none appearance-none"
+              className="bg-transparent text-slate-800 dark:text-slate-100 border-none focus:outline-none focus:ring-0 text-[10px] font-extrabold pr-4 cursor-pointer uppercase select-custom outline-none appearance-none w-full"
               style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
             >
               <option value="" className="bg-white dark:bg-navy-950 text-slate-400 font-bold">
@@ -573,7 +567,7 @@ function CitySelectorControl({ selectedCity, onCitySelect }: { selectedCity: str
                 </option>
               ))}
             </select>
-            <ChevronDown className="h-3 w-3 text-slate-450 dark:text-slate-400 absolute right-1.5 pointer-events-none" />
+            <ChevronDown className="h-3 w-3 text-slate-450 dark:text-slate-400 absolute right-1.5 pointer-events-none shrink-0" />
           </div>
         </div>
       )}
@@ -762,21 +756,23 @@ export default function RealMap({
         </div>
       )}
       
+      {/* Loading indicator — bottom-center, never overlaps controls */}
       {isLoadingRoads && (
-        <div className="absolute top-4 right-4 z-[1000] bg-white/95 dark:bg-slate-950/90 text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase border border-slate-500/20 shadow-xl flex items-center gap-1.5 backdrop-blur-md">
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 dark:bg-slate-950/90 text-slate-600 dark:text-slate-400 px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase border border-slate-500/20 shadow-xl flex items-center gap-1.5 backdrop-blur-md whitespace-nowrap">
           <RefreshCw className="h-3 w-3 animate-spin text-slate-500" />
-          <span>Streaming local road grid...</span>
+          <span>Loading roads...</span>
         </div>
       )}
 
+      {/* Error message — top-center, never overlaps corner controls */}
       {errorMessage && (
-        <div className="absolute top-16 right-4 z-[1000] bg-red-950/95 border border-red-500/30 text-red-200 px-4 py-2.5 rounded-xl text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300 backdrop-blur-md">
-          <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 animate-bounce" />
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1001] bg-red-950/95 border border-red-500/30 text-red-200 px-4 py-2.5 rounded-xl text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in duration-300 backdrop-blur-md whitespace-nowrap max-w-[90vw]">
+          <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
           <span>{errorMessage}</span>
           <button 
             type="button"
             onClick={() => setErrorMessage('')} 
-            className="ml-2 text-red-400 hover:text-red-200 font-black text-sm hover:scale-110 active:scale-95 transition-transform"
+            className="ml-2 text-red-400 hover:text-red-200 font-black text-sm"
           >
             ✕
           </button>
