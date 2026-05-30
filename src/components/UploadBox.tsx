@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Camera, Image as ImageIcon, Trash2, CheckCircle, UploadCloud, Loader2 } from 'lucide-react';
+import { Camera, ImageIcon, Trash2, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
 
 interface UploadBoxProps {
   onFileSelect: (url: string) => void;
@@ -10,124 +10,167 @@ interface UploadBoxProps {
 }
 
 export default function UploadBox({ onFileSelect, selectedFileUrl, onClear }: UploadBoxProps) {
-  const [isDragActive, setIsDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [source, setSource] = useState<'camera' | 'gallery' | null>(null);
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setIsDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setIsDragActive(false);
-    }
-  };
+  // Gallery input — accepts any image from file system / gallery
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  // Camera input — on mobile opens camera directly; on desktop falls back to file picker
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const simulateUpload = (file: File) => {
+  const processFile = (file: File, src: 'camera' | 'gallery') => {
+    setSource(src);
     setIsUploading(true);
-    // Simulate a network upload delay
     setTimeout(() => {
       setIsUploading(false);
-      // Create a local object URL to render the user's actual uploaded file!
       const objectUrl = URL.createObjectURL(file);
       onFileSelect(objectUrl);
-    }, 1500);
+    }, 1200);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      simulateUpload(file);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.preventDefault();
+  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      simulateUpload(file);
+      processFile(e.target.files[0], 'gallery');
     }
   };
 
-  const onButtonClick = () => {
-    fileInputRef.current?.click();
+  const handleCameraChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0], 'camera');
+    }
+  };
+
+  const handleClear = () => {
+    setSource(null);
+    // Reset both inputs so same file can be re-selected
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    onClear();
   };
 
   return (
-    <div className="w-full">
-      <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
-        Upload Photo / Video Proof
+    <div className="w-full space-y-3">
+      <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+        Upload Photo Proof
       </label>
 
+      {/* Hidden inputs */}
+      {/* Gallery input — opens photos/files */}
+      <input
+        ref={galleryInputRef}
+        type="file"
+        accept="image/*"
+        capture={undefined}
+        className="hidden"
+        onChange={handleGalleryChange}
+      />
+      {/* Camera input — on mobile directly opens camera */}
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleCameraChange}
+      />
+
       {selectedFileUrl ? (
-        <div className="relative rounded-xl border border-slate-200 dark:border-navy-700 overflow-hidden group aspect-[16/9] max-h-56 w-full flex items-center justify-center bg-slate-900">
-          <img 
-            src={selectedFileUrl} 
-            alt="Uploaded issue proof" 
-            className="w-full h-full object-cover" 
+        /* ── Preview of uploaded photo ── */
+        <div className="relative rounded-2xl border border-slate-200 dark:border-navy-700 overflow-hidden group aspect-[16/9] max-h-64 w-full flex items-center justify-center bg-slate-900">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={selectedFileUrl}
+            alt="Uploaded issue proof"
+            className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={onClear}
-              className="p-3 bg-red-600 hover:bg-red-700 text-white rounded-full transition-transform hover:scale-110 shadow-lg"
-              title="Delete photo"
-            >
-              <Trash2 className="h-5 w-5" />
-            </button>
+
+          {/* Hover overlay */}
+          <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+            <p className="text-white text-xs font-bold">Replace or remove photo</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-lg"
+              >
+                <Camera className="h-4 w-4" />
+                Retake
+              </button>
+              <button
+                type="button"
+                onClick={handleClear}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-lg"
+              >
+                <Trash2 className="h-4 w-4" />
+                Remove
+              </button>
+            </div>
           </div>
-          <div className="absolute top-3 right-3 bg-emerald-500/90 text-white px-2 py-1 rounded text-[10px] font-bold flex items-center space-x-1 backdrop-blur-md">
+
+          {/* Success badge */}
+          <div className="absolute top-3 left-3 bg-emerald-500/90 text-white px-2.5 py-1 rounded-lg text-[10px] font-extrabold flex items-center gap-1.5 backdrop-blur-md shadow">
             <CheckCircle className="h-3.5 w-3.5" />
-            <span>AI Ready</span>
+            <span>{source === 'camera' ? 'Camera Photo' : 'Gallery Photo'} · AI Ready</span>
+          </div>
+
+          {/* Mobile-visible remove button (always visible, not just on hover) */}
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute top-3 right-3 sm:hidden bg-red-600/90 hover:bg-red-700 text-white rounded-full p-1.5 shadow-lg backdrop-blur-md"
+            title="Remove photo"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ) : isUploading ? (
+        /* ── Uploading state ── */
+        <div className="w-full rounded-2xl border-2 border-dashed border-blue-400 bg-blue-500/5 aspect-[16/9] max-h-56 flex flex-col items-center justify-center gap-3">
+          <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
+          <div className="text-center">
+            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Processing Photo...</p>
+            <p className="text-xs text-slate-400 mt-0.5">Running AI size validation</p>
           </div>
         </div>
       ) : (
-        <div
-          onDragEnter={handleDrag}
-          onDragOver={handleDrag}
-          onDragLeave={handleDrag}
-          onDrop={handleDrop}
-          onClick={onButtonClick}
-          className={`relative rounded-xl border-2 border-dashed aspect-[16/9] max-h-56 w-full flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-200 ${
-            isDragActive 
-              ? 'border-blue-500 bg-blue-600/5 dark:bg-blue-600/10' 
-              : 'border-slate-200 dark:border-navy-700 hover:border-slate-300 dark:hover:border-navy-600 hover:bg-slate-50/50 dark:hover:bg-navy-900/30'
-          }`}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,video/*"
-            className="hidden"
-            onChange={handleChange}
-          />
+        /* ── Upload choice buttons ── */
+        <div className="space-y-3">
+          {/* Two large tap-friendly buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Open Camera */}
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              className="group flex flex-col items-center justify-center gap-3 p-5 rounded-2xl border-2 border-dashed border-blue-300 dark:border-blue-700 bg-blue-500/5 dark:bg-blue-500/8 hover:bg-blue-500/10 dark:hover:bg-blue-500/15 hover:border-blue-500 transition-all duration-200 active:scale-[0.97] cursor-pointer min-h-[130px]"
+            >
+              <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 group-hover:bg-blue-500/20 transition-colors">
+                <Camera className="h-7 w-7 text-blue-500" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-extrabold text-slate-800 dark:text-white">Open Camera</p>
+                <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">Take a photo now</p>
+              </div>
+            </button>
 
-          {isUploading ? (
-            <div className="flex flex-col items-center space-y-3">
-              <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-              <div>
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">AI Pre-processing File...</p>
-                <p className="text-xs text-slate-400 mt-1">Generating cloud link & running size validation</p>
+            {/* Upload from Gallery */}
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              className="group flex flex-col items-center justify-center gap-3 p-5 rounded-2xl border-2 border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-500/5 dark:bg-emerald-500/8 hover:bg-emerald-500/10 dark:hover:bg-emerald-500/15 hover:border-emerald-500 transition-all duration-200 active:scale-[0.97] cursor-pointer min-h-[130px]"
+            >
+              <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20 group-hover:bg-emerald-500/20 transition-colors">
+                <ImageIcon className="h-7 w-7 text-emerald-500" />
               </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center space-y-2">
-              <div className="p-3 bg-slate-100 dark:bg-navy-900/80 rounded-xl text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-navy-800/80">
-                <UploadCloud className="h-6 w-6 text-blue-500" />
+              <div className="text-center">
+                <p className="text-sm font-extrabold text-slate-800 dark:text-white">Gallery</p>
+                <p className="text-[10px] text-slate-400 mt-0.5 leading-tight">Choose from photos</p>
               </div>
-              <div>
-                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                  Drag & drop image, or <span className="text-blue-500 hover:underline">browse</span>
-                </p>
-                <p className="text-xs text-slate-400 mt-1">Supports PNG, JPG, MP4 (Max 15MB)</p>
-              </div>
-            </div>
-          )}
+            </button>
+          </div>
+
+          <p className="text-center text-[10px] text-slate-400 dark:text-slate-500">
+            Supports JPG, PNG · Max 15MB · Photo is used for AI severity analysis
+          </p>
         </div>
       )}
     </div>
