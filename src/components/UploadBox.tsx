@@ -21,11 +21,15 @@ export default function UploadBox({ onFileSelect, selectedFileUrl, onClear }: Up
   const processFile = (file: File, src: 'camera' | 'gallery') => {
     setSource(src);
     setIsUploading(true);
-    setTimeout(() => {
+    // Convert to base64 data URL so the image survives navigation (blob URLs die on page change)
+    const reader = new FileReader();
+    reader.onloadend = () => {
       setIsUploading(false);
-      const objectUrl = URL.createObjectURL(file);
-      onFileSelect(objectUrl);
-    }, 1200);
+      if (reader.result) {
+        onFileSelect(reader.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
