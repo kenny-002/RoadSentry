@@ -2,140 +2,197 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppState } from '../context/StateContext';
-import { Bot, User, Send, Mic, Globe, X, Sparkles, Lock } from 'lucide-react';
+import { Bot, User, Send, Mic, X, Sparkles, Lock, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface Message {
   id: string;
-  sender: 'bot' | 'user';
+  role: 'user' | 'bot';
   text: string;
   timestamp: string;
+  isError?: boolean;
 }
 
+// Suggested questions shown as quick chips
+const SUGGESTED_QUESTIONS = [
+  "What is the road type of OMR IT Expressway?",
+  "Who is the contractor for Mount Road?",
+  "What is the sanctioned amount for NH 44?",
+  "When was ECR last relaid?",
+  "How can I report a pothole?",
+  "Which authority handles GST Road?",
+  "How do I track my complaint?",
+  "What are road safety emergency numbers?",
+];
+
 export default function FloatingChatbot() {
-  const { roads, contractors, authorities, userRole } = useAppState();
+  const { userRole } = useAppState();
 
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const [lang, setLang] = useState<'en' | 'ta' | 'hi' | 'es'>('en');
-  const [isListening, setIsListening] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [isListening, setIsListening] = useState(false);
+  const [error, setError] = useState('');
+
+  // Chat history for multi-turn context (sent to backend)
+  const chatHistoryRef = useRef<{ role: string; text: string }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
 
-  const greetings: Record<string, string> = {
-    en: "Hi! I'm Road Sentry AI 👋 Ask me about road contractors, repair dates, or how to file a complaint.",
-    ta: "வணக்கம்! நான் ரோடு சென்ட்ரி AI. சாலை ஒப்பந்ததாரர்கள், பழுதுபார்க்கும் தேதிகள் பற்றி கேளுங்கள்.",
-    hi: "नमस्ते! मैं Road Sentry AI हूँ। सड़क ठेगेदार, मरम्मत की तारीखें या शिकायत के बारे में पूछें।",
-    es: "¡Hola! Soy Road Sentry AI. Pregúntame sobre contratistas o cómo reportar un problema."
-  };
+  const getTimestamp = () =>
+    new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  // Set welcome message when language changes or user logs in
+  // Welcome message on open
   useEffect(() => {
-    if (userRole !== null) {
+    if (userRole !== null && messages.length === 0) {
       setMessages([{
-        id: 'msg-welcome',
-        sender: 'bot',
-        text: greetings[lang],
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        id: 'welcome',
+        role: 'bot',
+        text: "👋 Hi! I'm **Road Sentry AI** — your smart road infrastructure assistant.\n\nI can help you with:\n• Road details, contractor info, budgets\n• Pothole & complaint reporting\n• Road safety & emergency contacts\n• Track complaint status\n\nAsk me anything about roads! 🛣️",
+        timestamp: getTimestamp(),
       }]);
     }
-  }, [lang, userRole]);
-
-  // Focus input when panel opens; clear unread
-  useEffect(() => {
-    if (!isOpen) return;
-    setUnread(0);
-    setTimeout(() => inputRef.current?.focus(), 200);
-  }, [isOpen]);
+  }, [userRole]);
 
   // Auto-scroll to latest message
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+  }, [messages, isLoading]);
+
+  // Focus input when opened
+  useEffect(() => {
+    if (isOpen) {
+      setUnread(0);
+      setTimeout(() => inputRef.current?.focus(), 250);
+    }
+  }, [isOpen]);
 
   if (userRole === null) return null;
 
-  const getBotResponse = (userText: string): string => {
-    const text = userText.toLowerCase();
-    if (text.includes('how to file') || text.includes('report') || text.includes('complaint')) {
-      return "To file a complaint: 1️⃣ Click 'Report Issue' in the navigation. 2️⃣ Select the road and damage type. 3️⃣ Click 'Get GPS' to attach coordinates. 4️⃣ Upload a photo and submit. The system auto-routes to the responsible engineer!";
-    }
-    const matchedRoad = roads.find(r =>
-      text.includes(r.name.toLowerCase()) ||
-      text.includes(r.name.split(' (')[0].toLowerCase()) ||
-      (r.type === 'NH' && text.includes('nh')) ||
-      (r.type === 'SH' && text.includes('sh'))
-    );
-    if (matchedRoad) {
-      const contractor = contractors.find(c => c.id === matchedRoad.contractorId);
-      const authority = authorities.find(a => a.id === (
-        matchedRoad.type === 'NH' ? 'authority-1' :
-        matchedRoad.type === 'SH' ? 'authority-2' : 'authority-3'
-      ));
-      if (text.includes('responsible') || text.includes('contractor') || text.includes('who') || text.includes('officer')) {
-        return `The contractor for "${matchedRoad.name}" is ${contractor ? contractor.name : 'unknown'}. Supervising engineer: ${authority ? `${authority.name} (${authority.role})` : 'N/A'}.`;
-      }
-      if (text.includes('repaired') || text.includes('relayed') || text.includes('date') || text.includes('last')) {
-        return `"${matchedRoad.name}" was last relayed on ${matchedRoad.lastRelayingDate}. Current condition: ${matchedRoad.condition}.`;
-      }
-      if (text.includes('spent') || text.includes('budget') || text.includes('cost') || text.includes('amount')) {
-        const diff = matchedRoad.spentAmount - matchedRoad.sanctionedAmount;
-        const varianceText = diff > 0 ? `exceeded by ₹${diff}L (overrun)` : `under-budget by ₹${Math.abs(diff)}L`;
-        return `Budget for "${matchedRoad.name}": Sanctioned ₹${matchedRoad.sanctionedAmount}L, Spent ₹${matchedRoad.spentAmount}L — ${varianceText}.`;
-      }
-    }
-    if (text.includes('hello') || text.includes('hi') || text.includes('hey')) return "Hello! How can I help you with Road Sentry today?";
-    if (text.includes('budget') || text.includes('money')) return "Budget information is currently not displayed in this portal. Try asking about contractors or repair dates.";
-    if (text.includes('thank')) return "You're welcome! Citizen vigilance keeps our roads accountable. 🌟";
-    return "Try asking:\n• 'Who is responsible for Mount Road?'\n• 'When was OMR last repaired?'\n• 'How do I file a complaint?'";
-  };
+  // ── Send message to backend API ──────────────────────────────────────────
+  const sendMessage = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || isLoading) return;
 
-  const handleSend = (textToSend: string) => {
-    if (!textToSend.trim()) return;
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const userMsg: Message = { id: `msg-u-${Date.now()}`, sender: 'user', text: textToSend, timestamp: now };
-    setMessages(prev => [...prev, userMsg]);
+    setError('');
     setInput('');
-    setIsTyping(true);
-    setTimeout(() => {
+
+    const userMsg: Message = {
+      id: `u-${Date.now()}`,
+      role: 'user',
+      text: trimmed,
+      timestamp: getTimestamp(),
+    };
+    setMessages(prev => [...prev, userMsg]);
+    setIsLoading(true);
+
+    // Add to history for context
+    chatHistoryRef.current.push({ role: 'user', text: trimmed });
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: trimmed,
+          history: chatHistoryRef.current.slice(-10), // last 10 turns for context
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Server error');
+      }
+
+      const botText = data.reply || "I'm having trouble responding. Please try again.";
+
       const botMsg: Message = {
-        id: `msg-b-${Date.now()}`,
-        sender: 'bot',
-        text: getBotResponse(textToSend),
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        id: `b-${Date.now()}`,
+        role: 'bot',
+        text: botText,
+        timestamp: getTimestamp(),
       };
       setMessages(prev => [...prev, botMsg]);
-      setIsTyping(false);
+      chatHistoryRef.current.push({ role: 'bot', text: botText });
+
       if (!isOpen) setUnread(n => n + 1);
-    }, 900);
+    } catch (err: any) {
+      const errMsg: Message = {
+        id: `err-${Date.now()}`,
+        role: 'bot',
+        text: "⚠️ Connection error. Please check your internet and try again.",
+        timestamp: getTimestamp(),
+        isError: true,
+      };
+      setMessages(prev => [...prev, errMsg]);
+      chatHistoryRef.current.push({ role: 'bot', text: errMsg.text });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // ── Voice Input (Web Speech API) ─────────────────────────────────────────
   const handleVoiceInput = () => {
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      setError('Voice input not supported in this browser.');
+      return;
+    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognitionRef.current = recognition;
     setIsListening(true);
-    setTimeout(() => {
-      const prompts = [
-        "Who is responsible for Mount Road?",
-        "When was OMR IT Expressway last repaired?",
-        "How do I file a complaint?"
-      ];
-      setInput(prompts[Math.floor(Math.random() * prompts.length)]);
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
       setIsListening(false);
-    }, 2000);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
   };
 
-  const suggestedQueries = [
-    "Who is responsible for Mount Road?",
-    "When was OMR last repaired?",
-    "How do I file a complaint?"
-  ];
+  const handleClear = () => {
+    setMessages([{
+      id: 'welcome-reset',
+      role: 'bot',
+      text: "Chat cleared! Ask me anything about roads, contractors, complaints or road safety. 🛣️",
+      timestamp: getTimestamp(),
+    }]);
+    chatHistoryRef.current = [];
+    setError('');
+  };
+
+  // Render message text with basic markdown-like formatting
+  const renderText = (text: string) => {
+    return text
+      .split('\n')
+      .map((line, i) => {
+        // Bold: **text**
+        const parts = line.split(/\*\*(.*?)\*\*/g);
+        return (
+          <span key={i}>
+            {parts.map((part, j) =>
+              j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+            )}
+            {i < text.split('\n').length - 1 && <br />}
+          </span>
+        );
+      });
+  };
 
   return (
     <>
       {/* ── Floating Chat Panel ── */}
       <div
-        className={`fixed bottom-5 right-5 z-[9999] w-[360px] max-w-[calc(100vw-2.5rem)] transition-all duration-300 origin-bottom-right ${
+        className={`fixed bottom-5 right-5 z-[9999] w-[370px] max-w-[calc(100vw-1.5rem)] transition-all duration-300 origin-bottom-right ${
           isOpen
             ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
@@ -143,52 +200,44 @@ export default function FloatingChatbot() {
       >
         <div
           className="flex flex-col overflow-hidden rounded-2xl shadow-2xl border border-slate-200 bg-white"
-          style={{ height: '520px' }}
+          style={{ height: '560px' }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-[#1E3A5F] border-b border-[#3B82F6]/30 text-white shrink-0">
+          {/* ── Header ── */}
+          <div className="flex items-center justify-between px-4 py-3 bg-[#1E3A5F] border-b border-blue-400/20 text-white shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 bg-[#3B82F6]/15 text-[#3B82F6] rounded-xl flex items-center justify-center border border-[#3B82F6]/35">
-                <Bot className="h-4 w-4 animate-pulse" />
+              <div className="h-9 w-9 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center border border-blue-400/30">
+                <Bot className="h-5 w-5" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-extrabold text-white">Road Sentry AI</span>
-                  <Sparkles className="h-3 w-3 text-[#3B82F6]" />
+                  <Sparkles className="h-3 w-3 text-blue-400" />
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-slate-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#3B82F6] animate-pulse inline-block" />
-                  <span>Smart City Agent • Online</span>
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-300">
+                  <span className={`h-1.5 w-1.5 rounded-full inline-block ${isLoading ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400'}`} />
+                  <span>{isLoading ? 'Thinking...' : 'Road Infrastructure Expert • Online'}</span>
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {userRole !== null && (
-                <div className="flex items-center gap-1 bg-white/10 border border-white/20 rounded-lg px-2 py-1">
-                  <Globe className="h-3 w-3 text-[#3B82F6]" />
-                  <select
-                    value={lang}
-                    onChange={(e) => setLang(e.target.value as 'en' | 'ta' | 'hi' | 'es')}
-                    className="bg-transparent border-none text-[10px] font-bold outline-none text-white focus:ring-0 cursor-pointer"
-                  >
-                    <option value="en" className="text-slate-900">EN</option>
-                    <option value="ta" className="text-slate-900">TA</option>
-                    <option value="hi" className="text-slate-900">HI</option>
-                    <option value="es" className="text-slate-900">ES</option>
-                  </select>
-                </div>
-              )}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleClear}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-slate-300 hover:text-white"
+                title="Clear chat"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/25 transition-colors active:scale-95 flex items-center justify-center cursor-pointer"
-                title="Close AI Assistant"
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/25 transition-colors"
+                title="Close"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
           </div>
 
-          {/* Body — Not logged in */}
+          {/* ── Body ── */}
           {userRole === null ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8 text-center bg-slate-50">
               <div className="h-16 w-16 rounded-full bg-[#1E3A5F]/10 border border-[#1E3A5F]/20 flex items-center justify-center">
@@ -196,58 +245,72 @@ export default function FloatingChatbot() {
               </div>
               <div>
                 <p className="font-extrabold text-slate-800 text-sm">Login Required</p>
-                <p className="text-xs text-slate-550 mt-1 max-w-[200px] leading-relaxed font-semibold">
-                  Please sign in to chat with the Road Sentry AI Assistant.
+                <p className="text-xs text-slate-500 mt-1 max-w-[200px] leading-relaxed">
+                  Sign in to chat with the Road Sentry AI Assistant.
                 </p>
               </div>
               <a
                 href="/login"
-                className="px-5 py-2.5 bg-[#1E3A5F] hover:bg-[#152A47] text-white text-xs font-bold rounded-xl transition-all active:scale-95 shadow"
+                className="px-5 py-2.5 bg-[#1E3A5F] hover:bg-[#152A47] text-white text-xs font-bold rounded-xl transition-all shadow"
               >
                 Sign In
               </a>
             </div>
           ) : (
             <>
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#F8FAFC]"
-                style={{ scrollbarWidth: 'none' }}>
+              {/* ── Messages ── */}
+              <div
+                className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#F8FAFC]"
+                style={{ scrollbarWidth: 'none' }}
+              >
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
-                    className={`flex items-end gap-2 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}
+                    className={`flex items-end gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                   >
+                    {/* Avatar */}
                     <div className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 border ${
-                      msg.sender === 'user'
+                      msg.role === 'user'
                         ? 'bg-[#1E3A5F] border-[#1E3A5F] text-white'
+                        : msg.isError
+                        ? 'bg-red-50 border-red-200 text-red-400'
                         : 'bg-white border-slate-200 text-slate-500'
                     }`}>
-                      {msg.sender === 'user'
+                      {msg.role === 'user'
                         ? <User className="h-3.5 w-3.5" />
+                        : msg.isError
+                        ? <AlertCircle className="h-3.5 w-3.5" />
                         : <Bot className="h-3.5 w-3.5" />}
                     </div>
-                    <div className={`max-w-[78%] px-3 py-2 rounded-2xl text-xs leading-relaxed font-medium ${
-                      msg.sender === 'user'
-                        ? 'bg-[#EFF6FF] border border-[#3B82F6]/30 text-[#1E3A5F] rounded-br-none shadow-sm'
+
+                    {/* Bubble */}
+                    <div className={`max-w-[82%] px-3 py-2.5 rounded-2xl text-xs leading-relaxed font-medium ${
+                      msg.role === 'user'
+                        ? 'bg-[#EFF6FF] border border-blue-200 text-[#1E3A5F] rounded-br-none shadow-sm'
+                        : msg.isError
+                        ? 'bg-red-50 border border-red-200 text-red-700 rounded-bl-none shadow-sm'
                         : 'bg-white text-slate-700 border border-slate-200 rounded-bl-none shadow-sm'
                     }`}>
-                      <p className="whitespace-pre-line">{msg.text}</p>
-                      <span className={`block text-[9px] mt-1 ${msg.sender === 'user' ? 'text-[#3B82F6] text-right font-semibold' : 'text-slate-400'}`}>
+                      <div className="whitespace-pre-line">{renderText(msg.text)}</div>
+                      <span className={`block text-[9px] mt-1.5 ${
+                        msg.role === 'user' ? 'text-blue-400 text-right' : 'text-slate-400'
+                      }`}>
                         {msg.timestamp}
                       </span>
                     </div>
                   </div>
                 ))}
 
-                {/* Typing dots */}
-                {isTyping && (
+                {/* Typing / Loading indicator */}
+                {isLoading && (
                   <div className="flex items-end gap-2">
                     <div className="h-7 w-7 rounded-full bg-white border border-slate-200 flex items-center justify-center">
                       <Bot className="h-3.5 w-3.5 text-slate-400" />
                     </div>
-                    <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm flex items-center gap-1">
+                    <div className="bg-white border border-slate-200 px-4 py-3 rounded-2xl rounded-bl-none shadow-sm flex items-center gap-1.5">
+                      <span className="text-[10px] text-slate-400 font-semibold mr-1">Road Sentry AI is thinking</span>
                       {[0, 150, 300].map(d => (
-                        <span key={d} className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: `${d}ms` }} />
+                        <span key={d} className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-bounce" style={{ animationDelay: `${d}ms` }} />
                       ))}
                     </div>
                   </div>
@@ -255,70 +318,86 @@ export default function FloatingChatbot() {
                 <div ref={chatEndRef} />
               </div>
 
-              {/* Quick suggestions */}
-              <div className="px-3 pt-2 pb-1 flex gap-1.5 overflow-x-auto bg-white border-t border-slate-100 shrink-0"
-                style={{ scrollbarWidth: 'none' }}>
-                {suggestedQueries.map((q, i) => (
+              {/* ── Suggested Questions ── */}
+              <div
+                className="px-3 pt-2 pb-1.5 flex gap-1.5 overflow-x-auto bg-white border-t border-slate-100 shrink-0"
+                style={{ scrollbarWidth: 'none' }}
+              >
+                {SUGGESTED_QUESTIONS.map((q, i) => (
                   <button
                     key={i}
-                    onClick={() => handleSend(q)}
-                    className="shrink-0 px-2.5 py-1 bg-slate-50 hover:bg-[#3B82F6]/10 hover:text-[#1E3A5F] hover:border-[#3B82F6]/20 text-slate-600 border border-slate-200 rounded-full text-[10px] font-semibold transition-all whitespace-nowrap cursor-pointer animate-in fade-in"
+                    onClick={() => sendMessage(q)}
+                    disabled={isLoading}
+                    className="shrink-0 px-2.5 py-1 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 disabled:opacity-50 text-slate-600 border border-slate-200 rounded-full text-[10px] font-semibold transition-all whitespace-nowrap cursor-pointer"
                   >
-                    {q.length > 28 ? q.slice(0, 27) + '…' : q}
+                    {q.length > 30 ? q.slice(0, 29) + '…' : q}
                   </button>
                 ))}
               </div>
 
-              {/* Input */}
+              {/* ── Input Bar ── */}
               <div className="flex gap-2 items-center px-3 py-3 bg-white border-t border-slate-100 shrink-0">
+                {/* Voice button */}
                 <button
                   onClick={handleVoiceInput}
-                  disabled={isListening}
+                  disabled={isListening || isLoading}
+                  title="Voice input"
                   className={`p-2.5 rounded-xl border transition-all shrink-0 ${
                     isListening
-                      ? 'bg-red-500/15 text-red-500 border-red-500/30 animate-pulse'
+                      ? 'bg-red-500/15 text-red-500 border-red-300 animate-pulse'
                       : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'
                   }`}
                 >
                   <Mic className="h-4 w-4" />
                 </button>
+
                 <input
                   ref={inputRef}
                   type="text"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
-                  placeholder={isListening ? 'Listening...' : 'Ask anything about roads...'}
-                  className="flex-1 px-3 py-2 border border-slate-200 bg-white rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A5F] text-slate-800"
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage(input)}
+                  placeholder={isListening ? '🎙 Listening...' : 'Ask about any road, contractor, complaint…'}
+                  disabled={isLoading}
+                  className="flex-1 px-3 py-2 border border-slate-200 bg-slate-50 hover:bg-white focus:bg-white rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/30 text-slate-800 placeholder:text-slate-400 transition-colors disabled:opacity-60"
                 />
+
                 <button
-                  onClick={() => handleSend(input)}
-                  disabled={!input.trim()}
-                  className="p-2.5 bg-[#1E3A5F] hover:bg-[#152A47] disabled:bg-slate-100 disabled:cursor-not-allowed text-white rounded-xl transition-all shadow hover:shadow-lg active:scale-95 shrink-0 cursor-pointer"
+                  onClick={() => sendMessage(input)}
+                  disabled={!input.trim() || isLoading}
+                  className="p-2.5 bg-[#1E3A5F] hover:bg-[#152A47] disabled:bg-slate-200 disabled:cursor-not-allowed text-white disabled:text-slate-400 rounded-xl transition-all shadow hover:shadow-md active:scale-95 shrink-0"
                 >
-                  <Send className="h-4 w-4" />
+                  {isLoading
+                    ? <RefreshCw className="h-4 w-4 animate-spin" />
+                    : <Send className="h-4 w-4" />
+                  }
                 </button>
+              </div>
+
+              {/* ── Gemini badge ── */}
+              <div className="text-center pb-2 text-[9px] text-slate-400 font-semibold bg-white">
+                ⚡ Powered by Gemini AI · Road topics only
               </div>
             </>
           )}
         </div>
       </div>
 
-      {/* ── Fixed Round Trigger Button ── */}
+      {/* ── Floating Trigger Button ── */}
       <button
         onClick={() => setIsOpen(prev => !prev)}
         style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999 }}
         className={`h-14 w-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 active:scale-95 hover:scale-110 border-2 cursor-pointer ${
           isOpen
             ? 'bg-slate-800 border-slate-700 text-white'
-            : 'bg-[#1E3A5F] border-[#3B82F6]/30 text-[#3B82F6]'
+            : 'bg-[#1E3A5F] border-blue-400/30 text-blue-400'
         }`}
         aria-label="Toggle AI Assistant"
       >
         {isOpen ? (
-          <X className="h-6 w-6" />
+          <X className="h-6 w-6 text-white" />
         ) : (
-          <div className="relative flex items-center justify-center animate-in zoom-in-50 duration-200">
+          <div className="relative flex items-center justify-center">
             <Bot className="h-6 w-6" />
             {unread > 0 && (
               <span
