@@ -531,10 +531,10 @@ function CitySelectorControl({ selectedCity, onCitySelect }: { selectedCity: str
     : [];
 
   return (
-    <div className="absolute top-4 left-14 z-[1000] bg-white/95 dark:bg-slate-950/95 rounded-xl p-2 border border-slate-200 dark:border-slate-800 shadow-2xl flex gap-2 items-center backdrop-blur-md">
+    <div className="absolute top-4 left-14 z-[1000] bg-white/95 dark:bg-slate-950/95 rounded-xl p-2 border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col gap-2 backdrop-blur-md">
       {/* State Dropdown */}
       <div className="flex items-center gap-1">
-        <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 px-0.5">State:</span>
+        <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 w-14 text-right shrink-0">State:</span>
         <div className="relative flex items-center bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-lg px-2 py-1">
           <select
             value={selectedState}
@@ -553,32 +553,29 @@ function CitySelectorControl({ selectedCity, onCitySelect }: { selectedCity: str
         </div>
       </div>
 
-      {/* Divider and District Dropdown - dynamically rendered after selecting state */}
+      {/* District Dropdown - shown after selecting state */}
       {selectedState && (
-        <>
-          <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800 mx-0.5" />
-          <div className="flex items-center gap-1">
-            <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 px-0.5">District:</span>
-            <div className="relative flex items-center bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-lg px-2 py-1">
-              <select
-                value={selectedCity}
-                onChange={handleDistrictChange}
-                className="bg-transparent text-slate-800 dark:text-slate-100 border-none focus:outline-none focus:ring-0 text-[10px] font-extrabold pr-4 cursor-pointer uppercase select-custom text-slate-600 dark:text-slate-400 outline-none appearance-none"
-                style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
-              >
-                <option value="" className="bg-white dark:bg-navy-950 text-slate-400 font-bold">
-                  Select District...
+        <div className="flex items-center gap-1">
+          <span className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 w-14 text-right shrink-0">District:</span>
+          <div className="relative flex items-center bg-slate-100 dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-lg px-2 py-1">
+            <select
+              value={selectedCity}
+              onChange={handleDistrictChange}
+              className="bg-transparent text-slate-800 dark:text-slate-100 border-none focus:outline-none focus:ring-0 text-[10px] font-extrabold pr-4 cursor-pointer uppercase select-custom outline-none appearance-none"
+              style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+            >
+              <option value="" className="bg-white dark:bg-navy-950 text-slate-400 font-bold">
+                Select District...
+              </option>
+              {availableDistricts.map((district) => (
+                <option key={district.name} value={district.name} className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white font-bold">
+                  {district.name}
                 </option>
-                {availableDistricts.map((district) => (
-                  <option key={district.name} value={district.name} className="bg-white dark:bg-navy-950 text-slate-800 dark:text-white font-bold">
-                    {district.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="h-3 w-3 text-slate-450 dark:text-slate-400 absolute right-1.5 pointer-events-none" />
-            </div>
+              ))}
+            </select>
+            <ChevronDown className="h-3 w-3 text-slate-450 dark:text-slate-400 absolute right-1.5 pointer-events-none" />
           </div>
-        </>
+        </div>
       )}
     </div>
   );
